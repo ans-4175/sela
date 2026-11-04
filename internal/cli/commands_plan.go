@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (a *App) planCommand(ctx context.Context, cmd string, account accounts.Account, id string) error {
+func (a *App) planCommand(ctx context.Context, cmd string, account accounts.Account, id string, approval plans.ChatApproval) error {
 	store, e := a.planStore()
 	if e != nil {
 		return e
@@ -25,7 +25,7 @@ func (a *App) planCommand(ctx context.Context, cmd string, account accounts.Acco
 		return encode(a.Out, p)
 	}
 	if cmd == "approve" {
-		if e = store.Approve(ctx, id, account, a.Confirm); e != nil {
+		if e = store.Approve(ctx, id, account, approval); e != nil {
 			return e
 		}
 		p, e = store.Load(ctx, id)

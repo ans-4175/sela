@@ -8,7 +8,7 @@ This guide sets up **Gmail + Google Calendar** for your own use. It does not aut
 
 - Build Sela as described in the [README](../README.md#build-from-source). Examples below assume `sela` is on PATH; otherwise use `./bin/sela` from the source directory.
 - Use a Google account with Gmail and Calendar available. Workspace administrators may restrict third-party apps or scopes.
-- Current native testing is on macOS. Linux integration needs runtime validation; Windows private storage/approval is not implemented yet. See the README platform table.
+- Current native testing is on macOS. Linux integration needs runtime validation; Windows protected storage/locking is not implemented yet. See the README platform table.
 - Keep client files and runtime state **outside the repository**. Never upload client JSON, tokens, real account metadata or approval plans to issues or chat.
 
 ## 1. Create your Cloud project
@@ -63,7 +63,7 @@ If you only want Calendar reads, use the `gmail-calendar-read` profile and decla
 
 To use mark-read, additionally declare `https://www.googleapis.com/auth/gmail.modify`, then repeat your chosen login command with **`--mail-modify --reauth`**. You must explicitly review and consent to the added access. Existing profiles/connections do not silently gain it.
 
-Google's modify scope is broader than marking READ. Sela exposes only fixed removal of UNREAD on explicitly selected message IDs, not arbitrary labels, archive or deletion. OAuth consent is not per-action approval: actual label changes still need a human-approved plan. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
+Google's modify scope is broader than marking READ. Sela exposes only fixed removal of UNREAD on explicitly selected message IDs, not arbitrary labels, archive or deletion. OAuth consent is not per-action approval: actual label changes still need an exact user-approved plan recorded by the agent from chat consent. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
 
 You can inspect the exact profiles without accessing an account:
 
@@ -162,7 +162,7 @@ sela --skill workflows
 sela --skill safety
 ```
 
-A write needs its own exact preview → human approval → execution. A working OAuth connection is not a standing instruction to become everyone's calendar manager.
+A write needs an exact preview matched to the user's chat consent → agent-recorded approval → execution. Users do not run plan approval commands or copy hashes; agents must not fabricate consent. Google OAuth browser consent remains a separate setup requirement. A working OAuth connection is not a standing instruction to become everyone's calendar manager.
 
 ## Official references
 

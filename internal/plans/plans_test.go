@@ -39,13 +39,14 @@ func TestApprovalIntegrityExpiryAndAccount(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if s.Approve(context.Background(), p.Scope.ID, accounts.Account{Name: "other", Email: "other@example.test"}, func(Plan) error { return nil }) == nil {
+	if s.Approve(context.Background(), p.Scope.ID, accounts.Account{Name: "other", Email: "other@example.test"}, ChatApproval{PlanHash: p.Hash, UserStatement: "Synthetic user approval"}) == nil {
 		t.Fatal("cross account")
 	}
-	if s.Approve(context.Background(), p.Scope.ID, fixture, nil) == nil {
-		t.Fatal("nil human confirmer")
+	if s.Approve(context.Background(), p.Scope.ID, fixture, ChatApproval{}) == nil {
+		t.Fatal("missing chat consent accepted")
 	}
-	if s.Approve(context.Background(), p.Scope.ID, fixture, func(Plan) error { now = now.Add(15 * time.Minute); return nil }) == nil {
+	now = now.Add(15 * time.Minute)
+	if s.Approve(context.Background(), p.Scope.ID, fixture, ChatApproval{PlanHash: p.Hash, UserStatement: "Synthetic user approval"}) == nil {
 		t.Fatal("expiry during confirmation ignored")
 	}
 	now = now.Add(-time.Minute)
@@ -68,12 +69,7 @@ func TestOneAttemptConcurrentExecution(t *testing.T) {
 	if _, e = s.Execute(ctx, p.Scope.ID, fixture, func(Plan) (json.RawMessage, error) { t.Error("unapproved transport"); return nil, nil }); e == nil {
 		t.Fatal("unapproved execution")
 	}
-	if e = s.Approve(ctx, p.Scope.ID, fixture, func(got Plan) error {
-		if got.Hash != Digest(got.Scope) {
-			t.Fatal("hash")
-		}
-		return nil
-	}); e != nil {
+	if e = s.Approve(ctx, p.Scope.ID, fixture, ChatApproval{PlanHash: p.Hash, UserStatement: "Synthetic user approval"}); e != nil {
 		t.Fatal(e)
 	}
 	var calls atomic.Int32
@@ -109,7 +105,7 @@ func TestUnknownAndClaimedCrashNeverRetry(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		s.Approve(ctx, p.Scope.ID, fixture, func(Plan) error { return nil })
+		s.Approve(ctx, p.Scope.ID, fixture, ChatApproval{PlanHash: p.Hash, UserStatement: "Synthetic user approval"})
 		if crash {
 			p, _ = s.Load(ctx, p.Scope.ID)
 			now := time.Now()
@@ -121,6 +117,9 @@ func TestUnknownAndClaimedCrashNeverRetry(t *testing.T) {
 			if e == nil || p.State != "unknown" {
 				t.Fatal(e, p)
 			}
+		}
+		if s.Approve(ctx, p.Scope.ID, fixture, ChatApproval{PlanHash: p.Hash, UserStatement: "Synthetic user consent"}) == nil {
+			t.Fatal("unknown/executing plan reapproved")
 		}
 		if _, e = s.Execute(ctx, p.Scope.ID, fixture, func(Plan) (json.RawMessage, error) { t.Error("ambiguous attempt retried"); return nil, nil }); e == nil {
 			t.Fatal("replayed")

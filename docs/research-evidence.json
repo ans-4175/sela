@@ -42,6 +42,16 @@
       "url": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/batchModify",
       "retrieved_at": "2026-11-04T05:43:30Z",
       "topic": "Explicit message IDs, fixed removeLabelIds UNREAD, empty success response and gmail.modify authorization. Sela further caps selections at 20 and verifies each message afterwards."
+    },
+    {
+      "url": "https://developers.google.com/workspace/calendar/api/v3/reference/events/insert",
+      "retrieved_at": "2026-11-04T06:43:53Z",
+      "topic": "Calendar events scope, conferenceDataVersion=1, explicit sendUpdates; unique createRequest per event, not copied conference data."
+    },
+    {
+      "url": "https://developers.google.com/workspace/calendar/api/v3/reference/events",
+      "retrieved_at": "2026-11-04T06:43:53Z",
+      "topic": "Conference createRequest requestId and asynchronous pending/success/failure; entryPoints and hangoutsMeet solution."
     }
   ],
   "module_metadata": {

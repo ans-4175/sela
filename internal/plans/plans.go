@@ -13,7 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 type Scope struct {
@@ -31,7 +33,27 @@ type Plan struct {
 	ApprovedAt  *time.Time      `json:"approved_at,omitempty"`
 	AttemptedAt *time.Time      `json:"attempted_at,omitempty"`
 	Result      json.RawMessage `json:"result,omitempty"`
+	Approval    *ApprovalRecord `json:"approval,omitempty"`
 }
+
+// ChatApproval is an agent's attestation of actual user consent, not proof of chat authenticity.
+type ChatApproval struct {
+	PlanHash      string `json:"plan_sha256"`
+	UserStatement string `json:"user_statement"`
+	Reference     string `json:"reference,omitempty"`
+}
+type ApprovalRecord struct {
+	Method string `json:"method"`
+	ChatApproval
+}
+
+func (a ChatApproval) Validate() error {
+	if len(a.PlanHash) != 64 || strings.Trim(a.PlanHash, "0123456789abcdef") != "" || strings.TrimSpace(a.UserStatement) == "" || len(a.UserStatement) > 4096 || len(a.Reference) > 512 || !utf8.ValidString(a.UserStatement) || !utf8.ValidString(a.Reference) {
+		return errors.New("approval requires --hash SHA256 and --user-approval with the actual user statement (1-4096 bytes); optional --approval-ref <=512 bytes")
+	}
+	return nil
+}
+
 type Store struct {
 	Dir string
 	Now func() time.Time
@@ -102,6 +124,9 @@ func (s Store) load(id string) (Plan, error) {
 	if p.Scope.ID != id || p.Scope.Account.Validate() != nil || p.Hash != Digest(p.Scope) || p.Scope.Expires.Sub(p.Scope.Created) != 15*time.Minute {
 		return p, errors.New("plan scope/hash integrity check failed")
 	}
+	if p.Approval != nil && (p.Approval.Method != "agent_attested_chat" || p.Approval.PlanHash != p.Hash || p.Approval.Validate() != nil || p.ApprovedAt == nil) {
+		return p, errors.New("approval record/hash integrity check failed")
+	}
 	return p, nil
 }
 func (s Store) Load(ctx context.Context, id string) (Plan, error) {
@@ -119,7 +144,7 @@ func (s Store) valid(p Plan, a accounts.Account) error {
 	}
 	return nil
 }
-func (s Store) Approve(ctx context.Context, id string, a accounts.Account, confirm func(Plan) error) error {
+func (s Store) Approve(ctx context.Context, id string, a accounts.Account, approval ChatApproval) error {
 	return s.locked(ctx, func() error {
 		p, err := s.load(id)
 		if err != nil {
@@ -128,18 +153,19 @@ func (s Store) Approve(ctx context.Context, id string, a accounts.Account, confi
 		if err = s.valid(p, a); err != nil {
 			return err
 		}
-		if p.State != "prepared" || confirm == nil {
-			return errors.New("plan is not awaiting human approval")
+		if p.State != "prepared" || p.ApprovedAt != nil || p.AttemptedAt != nil {
+			return errors.New("plan is not awaiting approval; never reapprove an attempted action")
 		}
-		if err = confirm(p); err != nil {
-			return errors.New("human approval not confirmed")
-		}
-		if err = s.valid(p, a); err != nil {
+		if err = approval.Validate(); err != nil {
 			return err
+		}
+		if approval.PlanHash != p.Hash {
+			return errors.New("approval hash does not match the exact plan")
 		}
 		now := s.now()
 		p.State = "approved"
 		p.ApprovedAt = &now
+		p.Approval = &ApprovalRecord{Method: "agent_attested_chat", ChatApproval: approval}
 		path, _ := s.path(id)
 		return localstore.Write(path, p)
 	})

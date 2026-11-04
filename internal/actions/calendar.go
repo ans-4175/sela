@@ -2,6 +2,7 @@ package actions
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 	_ "time/tzdata"
@@ -19,19 +20,35 @@ type Event struct {
 	End         EventTime `json:"end"`
 	Attendees   []string  `json:"attendees,omitempty"`
 }
+
+// MeetCreationNotice discloses partial-success risk before the agent records chat consent.
+const MeetCreationNotice = "A new Google Meet is requested asynchronously. Event/guest invitations can exist before a link is ready; pending/failure leaves the event in place. Plan succeeded means event creation, not Meet readiness: require result.meet_ready and result.workflow_complete. No automatic retry, replacement event or cancellation; reconcile with calendar get."
+
+// Conference requests a new Google Meet for one new event, never a shared/copied link.
+type Conference struct {
+	Type      string `json:"type"`
+	RequestID string `json:"request_id,omitempty"`
+}
+
+var conferenceRequestID = regexp.MustCompile(`^[a-f0-9]{32}$`)
+
 type Calendar struct {
-	CalendarID  string `json:"calendar_id"`
-	EventID     string `json:"event_id,omitempty"`
-	ETag        string `json:"expected_etag,omitempty"`
-	SendUpdates string `json:"send_updates"`
-	Event       *Event `json:"event,omitempty"`
-	Before      *Event `json:"before,omitempty"`
+	CalendarID  string      `json:"calendar_id"`
+	EventID     string      `json:"event_id,omitempty"`
+	ETag        string      `json:"expected_etag,omitempty"`
+	SendUpdates string      `json:"send_updates"`
+	Event       *Event      `json:"event,omitempty"`
+	Before      *Event      `json:"before,omitempty"`
+	Conference  *Conference `json:"conference,omitempty"`
 }
 
 // Validate checks an executable snapshot, including the server-derived change precondition.
 func (c Calendar) Validate(action string) error {
 	if err := c.ValidateInput(action); err != nil {
 		return err
+	}
+	if c.Conference != nil && !conferenceRequestID.MatchString(c.Conference.RequestID) {
+		return errors.New("Meet create requires the preview-generated conference request ID")
 	}
 	if action != "calendar.create" && (c.ETag == "" || c.Before == nil) {
 		return errors.New("update/delete require current snapshot and exact ETag")
@@ -46,6 +63,14 @@ func (c Calendar) ValidateInput(action string) error {
 	}
 	if action != "calendar.create" && action != "calendar.update" && action != "calendar.delete" {
 		return errors.New("unsupported calendar action")
+	}
+	if c.Conference != nil {
+		if action != "calendar.create" || c.Conference.Type != "google_meet" {
+			return errors.New("conference supports google_meet on create only; ordinary updates preserve conferences")
+		}
+		if c.Conference.RequestID != "" && !conferenceRequestID.MatchString(c.Conference.RequestID) {
+			return errors.New("invalid conference request ID")
+		}
 	}
 	if action == "calendar.create" && (c.EventID != "" || c.ETag != "") {
 		return errors.New("create must not carry event ID/ETag")

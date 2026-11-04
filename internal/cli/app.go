@@ -29,11 +29,10 @@ type App struct {
 	Out          io.Writer
 	RegistryPath string
 	Credentials  credentials.Store
-	Confirm      func(plans.Plan) error
 }
 
 func Run(ctx context.Context, args []string, out io.Writer) error {
-	return (&App{Out: out, Credentials: credentials.Keychain{}, Confirm: ConfirmTerminal}).Run(ctx, args)
+	return (&App{Out: out, Credentials: credentials.Keychain{}}).Run(ctx, args)
 }
 func encode(out io.Writer, value any) error {
 	e := json.NewEncoder(out)

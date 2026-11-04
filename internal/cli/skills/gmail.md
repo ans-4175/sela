@@ -23,14 +23,14 @@ Read a message and prepare its READ action together:
 ```sh
 sela mail get --account personal --id MESSAGE_ID --mark-read
 ```
-The response contains the message and `mark_read_plan` in prepared state. It **does not mark READ yet**. If already READ, the plan is null. Hand the plan to the human for approval, then execute it once.
+The response contains the message and `mark_read_plan` in prepared state. It **does not mark READ yet**. If already READ, the plan is null. Match the plan to actual user chat consent, record that consent through plan approve, then execute it once. No manual terminal/hash task for the user.
 
 For several messages already chosen by the user:
 ```sh
 sela mail preview --account personal --action mark-read --ids ID1,ID2
 sela plan show --account personal --id PLAN_ID
-# Human performs this themselves:
-sela plan approve --account personal --id PLAN_ID
+# Agent records actual user chat approval for this exact selection:
+sela plan approve --account personal --id PLAN_ID --hash SHA256 --user-approval 'USER STATEMENT'
 sela plan execute --account personal --id PLAN_ID
 ```
 Use 1-20 unique message IDs, not thread IDs, search expressions or a whole-inbox target. Preview reads only selected metadata and skips already-read messages. Execution removes only UNREAD and checks each selected message afterwards. Unknown/failed verification stops the workflow; no automatic retry, including after a successful-looking batch response. Other labels and unrelated messages must remain untouched.
@@ -45,8 +45,8 @@ Optional attachment entries are `{"path":"/absolute/path/to/file.pdf"}`. Preview
 sela mail preview --account personal --action draft-create --file /private/path/mail.json
 # or --action send. Direct send is not 'save draft'.
 sela plan show --account personal --id PLAN_ID
-# Human reviews + runs this themselves:
-sela plan approve --account personal --id PLAN_ID
+# Agent runs after user chat consent covers this exact content/recipients:
+sela plan approve --account personal --id PLAN_ID --hash SHA256 --user-approval 'USER STATEMENT'
 # Execute only the approved plan if still in scope:
 sela plan execute --account personal --id PLAN_ID
 ```

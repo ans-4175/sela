@@ -6,6 +6,7 @@ import (
 	"github.com/ans-4175/sela/internal/actions"
 	"github.com/ans-4175/sela/internal/auth"
 	"github.com/ans-4175/sela/internal/googleapi"
+	"github.com/ans-4175/sela/internal/plans"
 	"io"
 	"strings"
 )
@@ -40,6 +41,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	limit := int64(20)
 	reconsent, mailModify, markRead := false, false, false
 	idsValue := ""
+	approval := plans.ChatApproval{}
 	allowed := map[string]*string{"account": &alias}
 	switch args[0] + " " + args[1] {
 	case "auth login":
@@ -68,8 +70,13 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	case "calendar get":
 		allowed["calendar"] = &calendarID
 		allowed["id"] = &id
-	case "plan show", "plan approve", "plan execute":
+	case "plan show", "plan execute":
 		allowed["id"] = &id
+	case "plan approve":
+		allowed["id"] = &id
+		allowed["hash"] = &approval.PlanHash
+		allowed["user-approval"] = &approval.UserStatement
+		allowed["approval-ref"] = &approval.Reference
 	default:
 		return errors.New("unsupported command; no raw API/force/draft-send-by-ID/Calendar admin available")
 	}
@@ -87,6 +94,11 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	}
 	if e := parse(args[0]+" "+args[1], args[2:], allowed, numbers, booleans); e != nil {
 		return e
+	}
+	if args[0] == "plan" && args[1] == "approve" {
+		if err := approval.Validate(); err != nil {
+			return err
+		}
 	}
 	var markIDs []string
 	if args[0] == "mail" && args[1] == "preview" {
@@ -138,7 +150,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	case "auth":
 		return a.authCommand(ctx, args[1], account, clientFile, profile, reconsent, mailModify)
 	case "plan":
-		return a.planCommand(ctx, args[1], account, id)
+		return a.planCommand(ctx, args[1], account, id, approval)
 	case "mail":
 		if args[1] == "get" && markRead {
 			return a.readAndPreview(ctx, account, id)

@@ -182,11 +182,7 @@ func (c *Clients) Perform(ctx context.Context, p plans.Plan) (json.RawMessage, e
 	}
 	switch p.Scope.Action {
 	case "calendar.create":
-		r, e := c.calendar.Events.Insert(cp.CalendarID, event(cp.Event)).SendUpdates(cp.SendUpdates).Context(ctx).Do()
-		if e != nil {
-			return nil, safe(e)
-		}
-		return json.Marshal(map[string]string{"event_id": r.Id, "etag": r.Etag})
+		return c.createEvent(ctx, cp)
 	case "calendar.update":
 		call := c.calendar.Events.Patch(cp.CalendarID, cp.EventID, event(cp.Event)).SendUpdates(cp.SendUpdates).Context(ctx)
 		call.Header().Set("If-Match", cp.ETag)

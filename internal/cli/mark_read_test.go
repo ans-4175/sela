@@ -111,13 +111,7 @@ func TestReadAndBulkMarkReadStayApprovalAndScopeBound(t *testing.T) {
 	if err != nil || legacy.MailModify || strings.Contains(strings.Join(cfg.Scopes, " "), auth.MailModifyScope) {
 		t.Fatal("legacy connection silently widened")
 	}
-	app.Confirm = func(p plans.Plan) error {
-		if p.Hash != plan.Hash {
-			t.Error("wrong approval scope")
-		}
-		return nil
-	}
-	run("plan", "approve", "--account", "personal", "--id", plan.Scope.ID)
+	run("plan", "approve", "--account", "personal", "--id", plan.Scope.ID, "--hash", plan.Hash, "--user-approval", "Synthetic user requested marking only this fixture message READ")
 	beforeCalls, beforeLoads := calls, creds.loads
 	if err := app.Run(ctx, []string{"plan", "execute", "--account", "personal", "--id", plan.Scope.ID}); err == nil || !strings.Contains(err.Error(), "--mail-modify") {
 		t.Fatal("missing scope not rejected", err)

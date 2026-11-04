@@ -77,26 +77,24 @@ func TestLocalPreviewApprovalAccountAndExtraFlags(t *testing.T) {
 	if creds.calls != 0 {
 		t.Fatal("preview touched credentials")
 	}
-	approvals := 0
-	a.Confirm = func(got plans.Plan) error {
-		approvals++
-		if got.Hash != p.Hash {
-			t.Fatal("wrong scope")
-		}
-		return nil
+	approve := func(alias string) error {
+		return a.Run(ctx, []string{"plan", "approve", "--account", alias, "--id", p.Scope.ID, "--hash", p.Hash, "--user-approval", "Synthetic user approved this exact send", "--approval-ref", "fixture chat"})
 	}
-	if a.Run(ctx, []string{"plan", "approve", "--account", "work", "--id", p.Scope.ID}) == nil {
+	if approve("work") == nil {
 		t.Fatal("cross account approval")
 	}
-	if approvals != 0 {
-		t.Fatal("wrong approval reached human")
+	store, _ := a.planStore()
+	saved, _ := store.Load(ctx, p.Scope.ID)
+	if saved.State != "prepared" || saved.Approval != nil {
+		t.Fatal("wrong account changed approval")
 	}
 	out.Reset()
-	if e := a.Run(ctx, []string{"plan", "approve", "--account", "personal", "--id", p.Scope.ID}); e != nil {
+	if e := approve("personal"); e != nil {
 		t.Fatal(e)
 	}
-	if approvals != 1 {
-		t.Fatal("approval not called")
+	saved, _ = store.Load(ctx, p.Scope.ID)
+	if saved.Approval == nil || saved.Approval.PlanHash != p.Hash || saved.Approval.Method != "agent_attested_chat" {
+		t.Fatal("chat approval evidence not recorded")
 	}
 	for _, args := range [][]string{{"mail", "search", "--query", "hi"}, {"plan", "execute", "--account", "personal", "--id", p.Scope.ID, "--force"}, {"auth", "login", "--account", "personal"}} {
 		if a.Run(ctx, args) == nil {

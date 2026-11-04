@@ -18,13 +18,13 @@ Sela packages those tools and working instructions together. Give an agent shell
 
 ## Status: early development
 
-The CLI and Google adapters have offline critical-path tests. **Native macOS OAuth login, identity verification, Keychain persistence, and bounded Gmail/Calendar reads have also been observed on one connection.** Actual token expiry/refresh and write operations remain unverified live. This is limited integration evidence, not a production-readiness claim. No credentials are bundled.
+The CLI and Google adapters have offline critical-path tests. **Native macOS OAuth login, identity verification, Keychain persistence, and bounded Gmail/Calendar reads have also been observed on one connection.** One human-approved selected-message mark-read action also passed live verification. One Calendar create+Meet also passed live read-back verification under the earlier terminal gate. One chat-approved, description-only Calendar update also passed live read-back with its existing Meet preserved. Actual token expiry/refresh, mail send/draft and Calendar delete remain unverified live; this limited observation is not validation of every update or approval scenario. This is limited integration evidence, not a production-readiness claim. No credentials are bundled.
 
 | Platform | Current boundary |
 | --- | --- |
-| macOS | Native build/tests plus observed login, Keychain and bounded reads; refresh/writes unverified |
+| macOS | Native build/tests plus observed login, Keychain and bounded reads; selected mark-read, create+Meet and chat-approved description update observed; refresh/other writes unverified |
 | Linux | Unix storage/locking implementation; cross-build is not runtime validation |
-| Windows | Stateless help/skill/version only; account storage and approval fail closed pending ACL/locking/console implementation |
+| Windows | Stateless help/skill/version only; account storage and approval fail closed pending private-storage ACL/locking implementation |
 
 “Portable PA” means the toolkit travels between agents and harnesses. It does not mean every OS or model has already passed integration testing.
 
@@ -118,12 +118,14 @@ sela mail preview --account personal --action mark-read --ids ID1,ID2
 
 The preview accepts 1–20 unique message IDs, reads metadata, and skips messages already READ. It never expands a query or marks an entire thread. Approved execution removes only UNREAD, then verifies each selected message. Learn the full read/search/summarize/READ workflows with `sela --skill gmail`.
 
+Calendar create can opt into a new Google Meet with top-level `"conference":{"type":"google_meet"}`. The preview binds a unique request ID and notification effects. Meet generation is asynchronous: an event/invitations may exist before the link is ready. A successful event-create plan is not proof of a ready meeting—check `result.meet_ready` and `workflow_complete`. Reconcile pending/failure on the existing event; never blindly recreate it. See `sela --skill calendar`.
+
 ## Sending is not a side quest
 
 A send, draft creation, or event change uses the same path:
 
 ```text
-preview → human approval → one execution attempt
+user approves the task in chat → agent matches preview + records consent → one execution attempt
 ```
 
 Prepare a private input JSON outside the repo, then:
@@ -132,11 +134,13 @@ Prepare a private input JSON outside the repo, then:
 sela mail preview --account personal --action draft-create --file /private/path/mail.json
 # Or: calendar preview --action create|update|delete, with the chosen account and input.
 sela plan show --account personal --id PLAN_ID
-sela plan approve --account personal --id PLAN_ID
+sela plan approve --account personal --id PLAN_ID --hash SHA256 --user-approval 'USER STATEMENT'
 sela plan execute --account personal --id PLAN_ID
 ```
 
-Approval requires the human to review the exact account and payload, then type its hash in a controlling terminal. No `--yes`, `--force`, automated confirmation, or raw-API escape hatch.
+The agent runs approval, not you. Your clear chat instruction/confirmation is sufficient when it covers the exact account, recipients/targets, content/time and notification/conference effects. Already-confirmed unchanged details don't need another question after preview. The agent binds that consent to the plan hash and records a minimal real user statement plus optional chat reference. No terminal/hash chore, `--yes`, `--force`, blanket approve-all or raw-API escape hatch.
+
+This is an **agent attestation**, not independent proof of a chat message. Sela cannot detect an agent lying about consent; don't mistake a receipt for a sandbox. Ambiguity, material changes or new risks still need a chat clarification.
 
 Plans expire **15 minutes after creation**, not after approval. Mail attachments are snapshotted; changing a file later does not change the approved send. Calendar update/delete captures the current event, affected attendees, notification choice, and ETag. Execution uses `If-Match`; changed events need a fresh preview. Timestamp offsets must match the selected timezone on that date, including daylight-saving rules.
 
@@ -150,7 +154,7 @@ The packages separate account metadata, OAuth, native credentials, typed payload
 
 A future capability should arrive with its narrow adapter, explicit scopes/account binding, critical interface tests, `--help`, and an embedded `--skill` workflow. Adding a new endpoint without explaining how an assistant should use it is only half the job.
 
-Private local files and terminal approval guard against accidental misuse. They do **not** sandbox a malicious process running as the same OS user. Do not commit real credentials, mail/calendar previews, or approval state. See [SECURITY.md](SECURITY.md).
+Private local files, exact-plan checks and agent-attested user chat approval guard against accidental misuse. They do **not** sandbox a malicious process running as the same OS user. Do not commit real credentials, mail/calendar previews, or approval state. See [SECURITY.md](SECURITY.md).
 
 ## License
 
