@@ -23,6 +23,7 @@ type Connection struct {
 	Ready         bool            `json:"ready"`
 	Client        json.RawMessage `json:"desktop_client"`
 	CalendarWrite bool            `json:"calendar_write"`
+	MailModify    bool            `json:"mail_modify,omitempty"`
 }
 type App struct {
 	Out          io.Writer
@@ -100,7 +101,7 @@ func (a *App) connection(account accounts.Account) (Connection, *oauth2.Config, 
 	if e != nil {
 		return c, nil, e
 	}
-	cfg.Scopes = auth.ProfileScopes(c.CalendarWrite)
+	cfg.Scopes = auth.ProfileScopes(c.CalendarWrite, c.MailModify)
 	return c, cfg, nil
 }
 func (a *App) client(ctx context.Context, account accounts.Account) (*googleapi.Clients, Connection, error) {
@@ -118,7 +119,7 @@ func (a *App) client(ctx context.Context, account accounts.Account) (*googleapi.
 		if err != nil {
 			return err
 		}
-		if string(current.Client) != string(conn.Client) || current.CalendarWrite != conn.CalendarWrite {
+		if string(current.Client) != string(conn.Client) || current.CalendarWrite != conn.CalendarWrite || current.MailModify != conn.MailModify {
 			return errors.New("OAuth configuration changed; restart command")
 		}
 		return nil

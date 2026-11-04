@@ -40,7 +40,7 @@ func (a *App) accountCommand(ctx context.Context, args []string) error {
 	}
 	return encode(a.Out, map[string]any{"account": account, "authenticated": false})
 }
-func (a *App) authCommand(ctx context.Context, cmd string, account accounts.Account, clientFile, profile string, reconsent bool) error {
+func (a *App) authCommand(ctx context.Context, cmd string, account accounts.Account, clientFile, profile string, reconsent, mailModify bool) error {
 	dir, locks, e := a.paths()
 	if e != nil {
 		return e
@@ -58,7 +58,7 @@ func (a *App) authCommand(ctx context.Context, cmd string, account accounts.Acco
 			return e
 		}
 		write := profile == "gmail-calendar-write"
-		cfg.Scopes = auth.ProfileScopes(write)
+		cfg.Scopes = auth.ProfileScopes(write, mailModify)
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, &http.Client{Timeout: 30 * time.Second})
 		token, e := auth.Login(ctx, cfg, a.Out, reconsent)
 		if e != nil {
@@ -75,18 +75,18 @@ func (a *App) authCommand(ctx context.Context, cmd string, account accounts.Acco
 			return e
 		}
 		e = localstore.WithLock(ctx, auth.LockPath(locks, account.CredentialKey()), func() error {
-			if e := localstore.Write(filepath.Join(dir, account.Name+".json"), Connection{Ready: false, Client: data, CalendarWrite: write}); e != nil {
+			if e := localstore.Write(filepath.Join(dir, account.Name+".json"), Connection{Ready: false, Client: data, CalendarWrite: write, MailModify: mailModify}); e != nil {
 				return e
 			}
 			if a.Credentials.Save(account.CredentialKey(), token) != nil {
 				return credentials.ErrUnavailable
 			}
-			return localstore.Write(filepath.Join(dir, account.Name+".json"), Connection{Ready: true, Client: data, CalendarWrite: write})
+			return localstore.Write(filepath.Join(dir, account.Name+".json"), Connection{Ready: true, Client: data, CalendarWrite: write, MailModify: mailModify})
 		})
 		if e != nil {
 			return e
 		}
-		return encode(a.Out, map[string]any{"account": account, "authenticated": true, "calendar_write": write})
+		return encode(a.Out, map[string]any{"account": account, "authenticated": true, "calendar_write": write, "mail_modify": mailModify})
 	}
 	if cmd == "status" {
 		var exists bool

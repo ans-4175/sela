@@ -23,5 +23,11 @@ Read a bounded query, select relevant source messages, propose one response/draf
 ## 5. Protect focus time
 Read selected calendars; propose tentative slots, don't assume empty means free across all accounts. Ask whether the user wants personal blocks (no attendees) or invitations. Preview create with explicit send_updates. One approval per event; no recurring writes in MVP. Another event change during planning may invalidate the availability assumption even if create itself succeeds.
 
+## 6. Inbox triage: summarize, then mark only what the user chose
+
+Ask account, date/query boundary and message limit. Search likely sender names/domains or theme keywords if needed; describe candidate uncertainty. Read selected messages without changing READ status, then summarize in the calling model. Do not forward private mail to another model/provider without permission. Preserve source IDs and state whether coverage was partial.
+
+If the user explicitly asks to mark READ while reading, use `mail get --mark-read`; present its prepared plan for human approval. For several selected messages, use `mail preview --action mark-read --ids ID1,ID2`. Preview skips already-read messages. Never turn 'summarize my inbox' into permission to clear every unread label. Execute only after modify consent and exact plan approval; require read-back verification before claiming READ, and stop on unknown outcomes.
+
 ## Extending to another Google product
 Start from a concrete assistant job. Add a narrowly scoped adapter, explicit profile scope, typed read/action contract, mock tests and both help/skill. Reuse private state/account/approval engine. No raw endpoint fallback, implicit authorization, or scope inflation. Add cross-product failure/partial-success behavior to this guide.

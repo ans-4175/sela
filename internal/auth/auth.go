@@ -19,13 +19,19 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-func Scopes() []string { return ProfileScopes(false) }
-func ProfileScopes(calendarWrite bool) []string {
+const MailModifyScope = "https://www.googleapis.com/auth/gmail.modify"
+
+func Scopes() []string { return ProfileScopes(false, false) }
+func ProfileScopes(calendarWrite, mailModify bool) []string {
 	calendarScope := "https://www.googleapis.com/auth/calendar.events.readonly"
 	if calendarWrite {
 		calendarScope = "https://www.googleapis.com/auth/calendar.events"
 	}
-	return []string{"openid", "email", "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose", calendarScope, "https://www.googleapis.com/auth/calendar.calendarlist.readonly"}
+	scopes := []string{"openid", "email", "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose", calendarScope, "https://www.googleapis.com/auth/calendar.calendarlist.readonly"}
+	if mailModify {
+		scopes = append(scopes, MailModifyScope)
+	}
+	return scopes
 }
 func DesktopConfig(data []byte) (*oauth2.Config, error) {
 	var doc struct {

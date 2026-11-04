@@ -189,17 +189,27 @@ func TestCallbackStateHostAndReplay(t *testing.T) {
 	}
 }
 func TestGrantedScopesFailClosed(t *testing.T) {
-	token := (&oauth2.Token{}).WithExtra(map[string]any{"scope": strings.Join(ProfileScopes(false), " ")})
-	if e := ValidateScopes(token, ProfileScopes(false)); e != nil {
+	token := (&oauth2.Token{}).WithExtra(map[string]any{"scope": strings.Join(ProfileScopes(false, false), " ")})
+	if e := ValidateScopes(token, ProfileScopes(false, false)); e != nil {
 		t.Fatal(e)
 	}
-	if ValidateScopes(token, ProfileScopes(true)) == nil {
+	if ValidateScopes(token, ProfileScopes(true, false)) == nil {
 		t.Fatal("silent calendar scope widening")
 	}
 	if ValidateScopes(&oauth2.Token{}, Scopes()) == nil {
 		t.Fatal("missing scope evidence")
 	}
-	b, _ := json.Marshal(ProfileScopes(false))
+	if ValidateScopes(token, ProfileScopes(false, true)) == nil {
+		t.Fatal("mail modify silently enabled without consent")
+	}
+	modify := (&oauth2.Token{}).WithExtra(map[string]any{"scope": strings.Join(ProfileScopes(false, true), " ")})
+	if err := ValidateScopes(modify, ProfileScopes(false, true)); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := json.Marshal(ProfileScopes(false, false))
+	if strings.Contains(string(b), MailModifyScope) {
+		t.Fatal("mail modify leaked into default scopes")
+	}
 	if strings.Contains(string(b), "calendar.events\"") {
 		t.Fatal("default write scope")
 	}

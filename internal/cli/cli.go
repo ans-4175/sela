@@ -22,7 +22,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		return skill(a.Out, args[1:])
 	}
 	if len(args) == 1 && args[0] == "version" {
-		return encode(a.Out, map[string]string{"version": "0.1.0-dev", "stage": "offline-tested; live integration unverified"})
+		return encode(a.Out, map[string]string{"version": "0.1.0-dev", "stage": "development; see --skill for validation scope"})
 	}
 	if len(args) < 2 {
 		return errors.New("unknown command; use --help or --skill")
@@ -34,11 +34,12 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		if len(args) != 2 {
 			return errors.New("auth scopes takes no arguments")
 		}
-		return encode(a.Out, map[string]any{"default": auth.Scopes(), "calendar_write_opt_in": auth.ProfileScopes(true), "granted": false})
+		return encode(a.Out, map[string]any{"default": auth.Scopes(), "calendar_write_opt_in": auth.ProfileScopes(true, false), "mail_modify_opt_in": auth.MailModifyScope, "granted": false})
 	}
 	alias, id, query, page, calendarID, start, end, file, action, profile, clientFile := "", "", "", "", "", "", "", "", "", "", ""
 	limit := int64(20)
-	reconsent := false
+	reconsent, mailModify, markRead := false, false, false
+	idsValue := ""
 	allowed := map[string]*string{"account": &alias}
 	switch args[0] + " " + args[1] {
 	case "auth login":
@@ -50,7 +51,11 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		allowed["page"] = &page
 	case "mail get", "draft get":
 		allowed["id"] = &id
-	case "mail preview", "calendar preview":
+	case "mail preview":
+		allowed["file"] = &file
+		allowed["action"] = &action
+		allowed["ids"] = &idsValue
+	case "calendar preview":
 		allowed["file"] = &file
 		allowed["action"] = &action
 	case "calendar list":
@@ -75,9 +80,28 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	booleans := map[string]*bool{}
 	if args[0] == "auth" && args[1] == "login" {
 		booleans["reauth"] = &reconsent
+		booleans["mail-modify"] = &mailModify
+	}
+	if args[0] == "mail" && args[1] == "get" {
+		booleans["mark-read"] = &markRead
 	}
 	if e := parse(args[0]+" "+args[1], args[2:], allowed, numbers, booleans); e != nil {
 		return e
+	}
+	var markIDs []string
+	if args[0] == "mail" && args[1] == "preview" {
+		if action == "mark-read" {
+			if file != "" {
+				return errors.New("mark-read takes --ids only, not --file")
+			}
+			var err error
+			markIDs, err = actions.ParseMessageIDs(idsValue)
+			if err != nil {
+				return err
+			}
+		} else if idsValue != "" {
+			return errors.New("--ids is only valid with --action mark-read")
+		}
 	}
 	// Reject invalid reads before opening credential storage or verifying Google identity.
 	switch args[0] + " " + args[1] {
@@ -97,6 +121,11 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		if strings.TrimSpace(id) == "" {
 			return errors.New("explicit item ID required")
 		}
+		if markRead {
+			if err := actions.ValidateMessageIDs([]string{id}); err != nil {
+				return err
+			}
+		}
 		if args[0] == "calendar" && strings.TrimSpace(calendarID) == "" {
 			return errors.New("explicit calendar ID required")
 		}
@@ -107,13 +136,19 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	}
 	switch args[0] {
 	case "auth":
-		return a.authCommand(ctx, args[1], account, clientFile, profile, reconsent)
+		return a.authCommand(ctx, args[1], account, clientFile, profile, reconsent, mailModify)
 	case "plan":
 		return a.planCommand(ctx, args[1], account, id)
 	case "mail":
+		if args[1] == "get" && markRead {
+			return a.readAndPreview(ctx, account, id)
+		}
 		if args[1] == "preview" {
+			if action == "mark-read" {
+				return a.markReadPreview(ctx, account, markIDs)
+			}
 			if action != "send" && action != "draft-create" {
-				return errors.New("mail preview --action send|draft-create required; draft update/send-by-ID unavailable")
+				return errors.New("mail preview --action send|draft-create|mark-read required; draft update/send-by-ID unavailable")
 			}
 			var in actions.MailInput
 			if e = readInput(file, &in); e != nil {

@@ -59,6 +59,12 @@ https://www.googleapis.com/auth/calendar.calendarlist.readonly
 
 If you only want Calendar reads, use the `gmail-calendar-read` profile and declare `calendar.events.readonly` instead of `calendar.events`. That profile **still includes Gmail compose/send permission**; its name is not a Gmail read-only guarantee.
 
+### Optional: selected-message READ changes
+
+To use mark-read, additionally declare `https://www.googleapis.com/auth/gmail.modify`, then repeat your chosen login command with **`--mail-modify --reauth`**. You must explicitly review and consent to the added access. Existing profiles/connections do not silently gain it.
+
+Google's modify scope is broader than marking READ. Sela exposes only fixed removal of UNREAD on explicitly selected message IDs, not arbitrary labels, archive or deletion. OAuth consent is not per-action approval: actual label changes still need a human-approved plan. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
+
 You can inspect the exact profiles without accessing an account:
 
 ```sh
@@ -141,6 +147,7 @@ Logout is a credential mutation; run it only when you mean to disconnect that lo
 | Missing refresh token | With your explicit consent, repeat the same login command with `--reauth`. This requests fresh consent; it is not the default. |
 | Missing granted scope | Review the chosen profile and consent screen. Sela will not silently downgrade the connection. |
 | Callback timeout | Browser/CLI on the same machine; complete consent within five minutes. Start a new login instead of reusing an old callback. |
+| Unsafe local storage path/permissions | Use a private real directory you own, without symlink ancestors; `0700` directories / `0600` files. On macOS `/var` and `/tmp` can be symlinks: choose their canonical paths for custom config/test roots. Never chmod system directories or random ancestors to silence this check. |
 | Keyring unavailable / persistence failed | Fix native keyring availability or access. There is no token-file fallback. Don't post raw keyring/OAuth output. |
 | `invalid_grant` later | Explicit reauthentication is needed; do not loop refresh requests or promise never-expiring tokens. |
 

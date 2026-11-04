@@ -18,11 +18,11 @@ Sela packages those tools and working instructions together. Give an agent shell
 
 ## Status: early development
 
-The CLI and Google adapters are implemented with offline critical-path tests. **Live OAuth, native credential storage, Gmail, and Calendar integration have not been verified against a real account.** No production-readiness claim or bundled credentials.
+The CLI and Google adapters have offline critical-path tests. **Native macOS OAuth login, identity verification, Keychain persistence, and bounded Gmail/Calendar reads have also been observed on one connection.** Actual token expiry/refresh and write operations remain unverified live. This is limited integration evidence, not a production-readiness claim. No credentials are bundled.
 
 | Platform | Current boundary |
 | --- | --- |
-| macOS | Native build and offline tests; live integration unverified |
+| macOS | Native build/tests plus observed login, Keychain and bounded reads; refresh/writes unverified |
 | Linux | Unix storage/locking implementation; cross-build is not runtime validation |
 | Windows | Stateless help/skill/version only; account storage and approval fail closed pending ACL/locking/console implementation |
 
@@ -94,6 +94,8 @@ Both profiles request Gmail reading and `gmail.compose` (**which includes sendin
 
 If Google omits an offline refresh token, repeat the chosen login command with **`--reauth`** to request fresh consent. Normal login does not force re-consent. Testing-mode Google projects can have short-lived refresh credentials for these scopes; an eligible Production configuration is separate from verification and never guarantees perpetual tokens.
 
+Selected-message mark-read is a separate opt-in: add `--mail-modify --reauth` to your deliberately chosen login command and consent to Gmail's broader `gmail.modify` scope. Existing profiles do not request it by default. The CLI does not expose archive/delete/arbitrary label changes. See the setup guide before granting it.
+
 Tokens stay in the native OS keyring, with **no plaintext fallback**. Private client configuration, account metadata, and approval plans live under `$XDG_CONFIG_HOME/sela` or `~/.config/sela` on the current Unix implementation. Refresh is on demand and serialized per account across processes. `auth status` checks local credential presence; `auth logout` removes the local credential, not a claimed remote revocation.
 
 ## Read with a purpose
@@ -107,6 +109,14 @@ sela calendar events --account personal --calendar primary \
 ```
 
 Reads and plans return JSON. Remote results are marked as untrusted data. Pagination is explicit; Sela does not decide to tour the entire mailbox. The skill guides document input shapes, limits, notifications, and examples.
+
+Normal `mail get` never changes READ status. For read-and-mark, `mail get --mark-read` returns content plus a prepared READ plan; the label changes only after approval/execution. For a selected batch:
+
+```sh
+sela mail preview --account personal --action mark-read --ids ID1,ID2
+```
+
+The preview accepts 1–20 unique message IDs, reads metadata, and skips messages already READ. It never expands a query or marks an entire thread. Approved execution removes only UNREAD, then verifies each selected message. Learn the full read/search/summarize/READ workflows with `sela --skill gmail`.
 
 ## Sending is not a side quest
 
@@ -132,7 +142,7 @@ Plans expire **15 minutes after creation**, not after approval. Mail attachments
 
 Once claimed, an attempt cannot be replayed. Transport errors and interrupted writes remain **unknown/executing** until reconciled; Sela will not blindly send again. This is local at-most-one-attempt behavior, not distributed exactly-once delivery. Cross-product workflows can partially succeed and have no automatic rollback.
 
-Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, mailbox label/archive/delete, recurring or all-day event writes, Calendar/ACL administration, free/busy aggregation, or background scheduling.
+Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, arbitrary mailbox labels/archive/delete, recurring or all-day event writes, Calendar/ACL administration, free/busy aggregation, or background scheduling.
 
 ## Extend the capability, bring the instructions
 

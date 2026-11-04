@@ -84,7 +84,7 @@ func (c *Clients) Search(ctx context.Context, q string, limit int64, page string
 	r, e := c.mail.Users.Messages.List("me").Q(q).MaxResults(limit).PageToken(page).Context(ctx).Do()
 	return r, safe(e)
 }
-func (c *Clients) Message(ctx context.Context, id string) (any, error) {
+func (c *Clients) Message(ctx context.Context, id string) (*gmail.Message, error) {
 	if id == "" {
 		return nil, errors.New("message ID required")
 	}
@@ -150,6 +150,13 @@ func EventView(e *calendar.Event) *actions.Event {
 
 // Perform sends the immutable snapshot once. It contains NO automatic retry loop.
 func (c *Clients) Perform(ctx context.Context, p plans.Plan) (json.RawMessage, error) {
+	if p.Scope.Action == "mail.mark-read" {
+		var payload actions.MarkRead
+		if json.Unmarshal(p.Scope.Payload, &payload) != nil {
+			return nil, errors.New("invalid mark-read snapshot")
+		}
+		return c.markRead(ctx, payload)
+	}
 	if p.Scope.Action == "mail.send" || p.Scope.Action == "draft.create" {
 		var m actions.Mail
 		if json.Unmarshal(p.Scope.Payload, &m) != nil || m.Validate(p.Scope.Account) != nil {

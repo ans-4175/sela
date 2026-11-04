@@ -37,6 +37,11 @@
     {
       "url": "https://github.com/googleworkspace/cli",
       "topic": "Existing broad Google API CLI candidate"
+    },
+    {
+      "url": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/batchModify",
+      "retrieved_at": "2026-11-04T05:43:30Z",
+      "topic": "Explicit message IDs, fixed removeLabelIds UNREAD, empty success response and gmail.modify authorization. Sela further caps selections at 20 and verifies each message afterwards."
     }
   ],
   "module_metadata": {

@@ -1,6 +1,6 @@
 # Security boundaries
 
-Sela is early-development software. Google OAuth, native credential-store behavior, and live Gmail/Calendar writes have not been integration-tested with a real account. Do not infer security assurance from a successful cross-build or offline test.
+Sela is early-development software. Native macOS OAuth/identity, Keychain persistence and bounded Gmail/Calendar reads have been observed on one connection. Real expiry/refresh and writes remain unverified. Do not infer broad security assurance from this limited observation, a cross-build or an offline test.
 
 ## Credentials and private content
 
@@ -12,7 +12,7 @@ Sela is early-development software. Google OAuth, native credential-store behavi
 
 ## Authorization and attempts
 
-Every account-specific command requires an explicit alias. OAuth identity must match the selected email. Calendar write scope is opt-in; Gmail compose scope includes sending. A granted OAuth scope is not per-action approval.
+Every account-specific command requires an explicit alias. OAuth identity must match the selected email. Calendar write scope is opt-in; Gmail compose scope includes sending. A granted OAuth scope is not per-action approval. Mark-read needs a separate explicit `--mail-modify` opt-in and consent to Gmail's broader modify scope; existing connection files default to false. Sela exposes only selected-message UNREAD removal, not raw labels/archive/delete. Each batch is bounded to 20 unique IDs and read-back verified; uncertainty consumes the plan without automatic retry.
 
 Writes require an immutable, expiring plan and human terminal confirmation. The local attempt is persisted before the provider call. An error or interrupted request may have succeeded remotely: unknown/executing plans cannot be retried automatically. Reconcile first. An absent search result is not proof a send failed.
 

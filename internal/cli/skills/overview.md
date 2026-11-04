@@ -3,7 +3,9 @@ name: sela
 description: Use sela for explicitly authorized Gmail and Google Calendar personal-assistant tasks, account-aware reading, draft/send planning, scheduling and mail-calendar workflows. Learn capabilities locally before touching an account.
 ---
 
-# sela: onboard yourself before onboarding the user's inbox
+# Sela: a portable PA toolkit
+
+Use the model for reasoning and the harness for execution. Sela supplies tools and working instructions; it does not bundle a model or assume one agent runtime.
 
 1. Run `sela --help` and this guide. Discovery never accesses Google or Keychain.
 2. Read `sela --skill safety`. Choose the smallest relevant guide: `gmail`, `calendar`, `workflows`.
@@ -13,12 +15,12 @@ description: Use sela for explicitly authorized Gmail and Google Calendar person
 
 ## Capabilities and status
 - Local metadata, scope discovery, immutable 15-minute plans, human terminal approval and one-attempt ledger.
-- Official Gmail SDK: bounded search/get, draft get/create, exact-snapshot direct send.
+- Official Gmail SDK: bounded search/get, draft get/create, exact-snapshot direct send; opt-in selected-message mark-read with verification. Normal reads never mark READ; `mail get --mark-read` prepares a write plan alongside content.
 - Official Calendar SDK: calendar/event reads; timed single-event create/update/delete with explicit calendar, timezone, attendee/notification effects, ETag checks for changes.
 - OAuth Desktop + PKCE loopback, on-demand refresh, native OS keyring without plaintext fallback. Login requires user-selected account and explicit scope profile. `gmail.compose` can send, not just draft.
 - No daemon, mailbox mirror, default account, force flag, raw API, automatic send retry, cross-account aggregation, Calendar/ACL admin or hidden browser automation.
 - Not exposed: Gmail draft update/send-by-ID; recurring/all-day event writes. Do not improvise alternatives with curl/SDK to bypass those limits.
-- Live Google/Keychain integration is NOT yet verified. macOS is the native test host; Linux is cross-built, not live-tested. Windows currently supports stateless discovery only; protected storage/console functionality fails closed pending implementation/validation.
+- Native macOS OAuth identity, keyring persistence and bounded Gmail/Calendar reads have been observed on one connection. Real expiry/refresh and writes remain unverified. Offline mocks are not live write proof. Linux is cross-built, not runtime-tested. Windows currently supports stateless discovery only; protected storage/console functionality fails closed pending implementation/validation.
 
 ## How to extend without becoming another bag of endpoints
 Add a narrow provider capability, typed payload/read operation, explicit consent scope, account/safety tests, CLI help entry and embedded skill topic/workflow. Reuse the approval engine for mutations. Do not silently broaden old scopes or enable arbitrary APIs. Explain user outcomes, prerequisites and failure recovery, not just API method names. New Google products are opt-in, not inherited authority.

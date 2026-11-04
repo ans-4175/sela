@@ -37,9 +37,21 @@ func (a *App) planCommand(ctx context.Context, cmd string, account accounts.Acco
 	if p.State != "approved" || !time.Now().Before(p.Scope.Expires) {
 		return errors.New("plan must be approved, unattempted and unexpired before credential/API access")
 	}
+	if p.Scope.Action == "mail.mark-read" {
+		conn, _, err := a.connection(account)
+		if err != nil {
+			return err
+		}
+		if !conn.MailModify {
+			return errors.New("mark-read requires explicit --mail-modify consent; nothing attempted")
+		}
+	}
 	client, conn, e := a.client(ctx, account)
 	if e != nil {
 		return e
+	}
+	if p.Scope.Action == "mail.mark-read" && !conn.MailModify {
+		return errors.New("mark-read requires explicit --mail-modify consent; nothing attempted")
 	}
 	if (p.Scope.Action == "calendar.create" || p.Scope.Action == "calendar.update" || p.Scope.Action == "calendar.delete") && !conn.CalendarWrite {
 		return errors.New("calendar write profile was not explicitly consented; nothing attempted")

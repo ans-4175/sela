@@ -66,7 +66,7 @@ func (s Store) Create(ctx context.Context, a accounts.Account, action string, pa
 		return p, errors.New("explicit valid plan account required")
 	}
 	switch action {
-	case "mail.send", "draft.create", "calendar.create", "calendar.update", "calendar.delete":
+	case "mail.send", "mail.mark-read", "draft.create", "calendar.create", "calendar.update", "calendar.delete":
 	default:
 		return p, errors.New("unsupported plan action")
 	}
