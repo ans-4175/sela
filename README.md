@@ -80,7 +80,7 @@ sela account list
 sela auth scopes
 ```
 
-Adding metadata does not log in or prove account identity. When the user explicitly approves setup, supply a Google **Desktop** OAuth client downloaded from their own Cloud project. Enable Gmail and Calendar APIs and configure consent there. Keep the client file **outside this repository**.
+Adding metadata does not log in or prove account identity. Follow the **[Google setup guide](docs/setup-google.md)** for project creation, API enablement, consent scopes, Desktop client download and troubleshooting. Keep the client file **outside this repository**.
 
 ```sh
 sela auth login --account personal \
