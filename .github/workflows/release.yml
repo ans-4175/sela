@@ -3,22 +3,61 @@ name: GitHub prerelease
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing SemVer tag to release; never creates or moves a tag
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.target.outputs.tag }}
+      commit: ${{ steps.target.outputs.commit }}
+    steps:
+      - id: target
+        name: Resolve immutable existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          tag = os.environ['RELEASE_TAG']
+          assert len(tag) <= 128 and re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?', tag), 'invalid release tag'
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/' + os.environ['GITHUB_REPOSITORY'] + path], text=True))
+          obj = api('/git/ref/tags/' + tag)['object']
+          for _ in range(5):
+              if obj['type'] == 'commit':
+                  break
+              assert obj['type'] == 'tag', 'tag must resolve to a commit'
+              obj = api('/git/tags/' + obj['sha'])['object']
+          assert obj['type'] == 'commit' and re.fullmatch(r'[a-f0-9]{40}', obj['sha']), 'invalid tagged commit'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('tag=' + tag + '\ncommit=' + obj['sha'] + '\n')
+          PY
+
   checks:
+    needs: resolve
     uses: ./.github/workflows/ci.yml
     with:
-      version: ${{ github.ref_name }}
+      version: ${{ needs.resolve.outputs.tag }}
+      source_tag: ${{ needs.resolve.outputs.tag }}
+      expected_commit: ${{ needs.resolve.outputs.commit }}
 
   publish:
-    needs: checks
+    needs: [resolve, checks]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -31,8 +70,8 @@ jobs:
           path: dist
       - name: Verify exact asset inventory, identity and checksums
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          EXPECTED_COMMIT: ${{ needs.checks.outputs.commit }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.tag }}
+          EXPECTED_COMMIT: ${{ needs.resolve.outputs.commit }}
         run: |
           python3 - <<'PY'
           import hashlib, json, os, pathlib, re
@@ -67,8 +106,21 @@ jobs:
       - name: Publish on GitHub Releases only
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.tag }}
+          EXPECTED_COMMIT: ${{ needs.resolve.outputs.commit }}
         run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', 'repos/' + os.environ['GITHUB_REPOSITORY'] + path], text=True))
+          obj = api('/git/ref/tags/' + os.environ['RELEASE_TAG'])['object']
+          for _ in range(5):
+              if obj['type'] == 'commit':
+                  break
+              assert obj['type'] == 'tag'
+              obj = api('/git/tags/' + obj['sha'])['object']
+          assert obj['type'] == 'commit' and obj['sha'] == os.environ['EXPECTED_COMMIT'], 'tag moved since CI; refusing publication'
+          PY
           gh release create "$RELEASE_TAG" dist/* \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --target "$EXPECTED_COMMIT" --prerelease --latest=false \
             --title "Sela $RELEASE_TAG (prerelease)" --notes-file dist/RELEASE_NOTES.md

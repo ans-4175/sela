@@ -23,11 +23,24 @@ git tag -a v0.1.0-alpha.1 -m 'Sela v0.1.0-alpha.1'
 git push origin v0.1.0-alpha.1
 ```
 
-The tag's source must contain the workflows. Pushing `v*` runs `.github/workflows/release.yml`, which reuses all CI gates against that tagged commit. Invalid version tags, dirty source and failed checks block publication. The workflow does not have a manual-dispatch or main-push publishing shortcut.
+The tag's source must contain the workflows. Pushing `v*` runs `.github/workflows/release.yml`, which reuses all CI gates against that tagged commit. Invalid version tags, dirty source and failed checks block publication. Main-push CI never publishes. A maintainer can explicitly retry an existing tag via the manual path below; it runs the same gates, not a direct-publish shortcut.
 
 Read-only build jobs upload assets within the same workflow run. Only the final publish job has `contents:write`; it does not check out or run repository scripts. It verifies exact filenames, tag/commit, clean-source metadata and SHA256 before `gh release create --verify-tag --prerelease --latest=false`. No Google credentials, PAT or additional secrets are needed; it uses the scoped ephemeral GITHUB_TOKEN. Repository/org settings may still block Actions or token writes; fix the actual permission, never add a broad token as a workaround.
 
 All releases are marked prerelease, even an unsuffixed `v0.1.0` tag. Stable promotion is a separate future decision. Concurrent runs for the same ref queue rather than cancel. Existing releases are not overwritten or clobbered: if publication is interrupted or a rerun finds an existing release, inspect it and reconcile manually.
+
+## Retry an existing tag without moving it
+
+If a tag event was missed (for example during a GitHub incident), after confirming the tag is correct and no release/run already exists:
+
+```sh
+# Publishes only after all checks succeed. Requires release approval.
+gh workflow run release.yml --ref main -f tag=v0.1.0-beta.1
+```
+
+The current workflow controller on main resolves the **existing** tag to a commit. Native test jobs and packaging explicitly check out that tag, verify the expected commit before running project code, and build that source—not main's newer code under an old version label. Artifact inventory/checksums bind version and commit. The publisher rechecks the tag's commit immediately before creation and refuses a moved tag. No tag is created, deleted, retargeted or force-pushed. Missing/invalid tags fail closed. Existing releases are not overwritten; inspect/reconcile them before retrying.
+
+This requires workflow-dispatch permission. Editing workflow files via classic OAuth also requires the `workflow` scope; source-code push permission alone may not cover that. Do not export a token or broaden its scopes without the user's approval. Git credential helper `gh auth git-credential` can be used per-command for HTTPS without changing global Git config or the SSH remote.
 
 ## Assets and support boundaries
 
