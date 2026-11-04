@@ -7,9 +7,11 @@ Distribution is GitHub Releases only. No registry, installer, package-manager ta
 PRs and pushes to main run `.github/workflows/ci.yml`:
 
 - Go pinned by `.go-version` (currently 1.26.5); no local toolchain/PATH changes. CI setup installs that toolchain on ephemeral runners.
-- Native hosted macOS/Linux vet + race tests; Windows vet + ordinary tests, including explicit protected-storage refusal. Keyring adapters use mocks, OAuth tests use fixtures, not a real Google grant.
+- Native hosted macOS Intel (`macos-15-intel`) and Linux vet + race tests; Windows vet + ordinary tests, including explicit protected-storage refusal. Keyring adapters use mocks, OAuth tests use fixtures, not a real Google grant.
 - Compiled discovery, strict-input and local chat-approval smoke. Windows checks discovery and fails closed for protected state. No login, host keyring or provider calls.
 - Six CGO-disabled cross-builds, archive/checksum checks, and packaged Linux amd64 smoke with injected version. Cross-builds are not native runtime evidence for every architecture.
+
+macOS CI is pinned to the standard Intel runner because `macos-latest` selected an arm64 pool that could not acquire a runner during release recovery. This changes the test host, not the test commands or six release targets. Darwin arm64 remains a cross-build target; passing Intel CI is not native arm64 CI proof.
 
 The CI tag `v0.0.0-ci` is only an injected binary label for branch/PR packaging, never a git tag or published release. Python 3.12 is a CI/build-time tool for stdlib packaging/tests, not a runtime dependency of Sela.
 

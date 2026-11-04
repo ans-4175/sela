@@ -92,6 +92,11 @@
       "url": "https://cli.github.com/manual/gh_workflow_run",
       "retrieved_at": "2026-11-04T16:18:49Z",
       "topic": "Installed gh workflow run --help confirms workflow_dispatch is required and --ref selects the controller workflow version; inputs supplied as data via --raw-field. Manual retry uses controller main and an independently resolved existing source tag."
+    },
+    {
+      "url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+      "retrieved_at": "2026-11-04T23:56:12Z",
+      "topic": "Official standard public macOS Intel label macos-15-intel verified via Perplexity primary-source excerpt. macos-latest selects arm64; switching test host preserves race/tests and six cross-build targets, not native ARM CI coverage."
     }
   ],
   "module_metadata": {
