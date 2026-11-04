@@ -1,0 +1,47 @@
+{
+  "retrieved_at": "2026-11-04T09:49:00+07:00",
+  "method": "Perplexity research/search returned primary-source excerpts; local go list -m -json verified module metadata. Not a completed audit of repositories or OAuth behavior.",
+  "sources": [
+    {
+      "url": "https://support.google.com/cloud/answer/13464323?hl=en",
+      "topic": "Personal-use verification exception; publishing separate from verification"
+    },
+    {
+      "url": "https://developers.google.com/identity/protocols/oauth2",
+      "topic": "Refresh token lifecycle and testing-mode expiry"
+    },
+    {
+      "url": "https://developers.google.com/identity/protocols/oauth2/native-app",
+      "topic": "Desktop OAuth and loopback"
+    },
+    {
+      "url": "https://developers.google.com/workspace/gmail/api/auth/scopes",
+      "topic": "Gmail scopes and compose includes send"
+    },
+    {
+      "url": "https://developers.google.com/workspace/calendar/api/auth",
+      "topic": "Calendar read-only scopes"
+    },
+    {
+      "url": "https://support.google.com/accounts/answer/185833?hl=en",
+      "topic": "App passwords, 2FA and revocation"
+    },
+    {
+      "url": "https://github.com/golang/oauth2",
+      "topic": "PKCE and standard OAuth library"
+    },
+    {
+      "url": "https://github.com/steipete/gogcli",
+      "topic": "Existing Go CLI candidate; repository may redirect, provenance/version needs labs review"
+    },
+    {
+      "url": "https://github.com/googleworkspace/cli",
+      "topic": "Existing broad Google API CLI candidate"
+    }
+  ],
+  "module_metadata": {
+    "golang.org/x/oauth2": "v0.37.0; Go 1.26.0",
+    "google.golang.org/api": "v0.310.0; Go 1.26.0",
+    "github.com/zalando/go-keyring": "v0.2.8; Go 1.18"
+  }
+}
