@@ -23,7 +23,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		return skill(a.Out, args[1:])
 	}
 	if len(args) == 1 && args[0] == "version" {
-		return encode(a.Out, map[string]string{"version": "0.1.0-dev", "stage": "development; see --skill for validation scope"})
+		return encode(a.Out, versionMetadata())
 	}
 	if len(args) < 2 {
 		return errors.New("unknown command; use --help or --skill")

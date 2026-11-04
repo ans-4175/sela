@@ -52,6 +52,41 @@
       "url": "https://developers.google.com/workspace/calendar/api/v3/reference/events",
       "retrieved_at": "2026-11-04T06:43:53Z",
       "topic": "Conference createRequest requestId and asynchronous pending/success/failure; entryPoints and hangoutsMeet solution."
+    },
+    {
+      "url": "https://docs.github.com/en/actions/reference/security/secure-use",
+      "retrieved_at": "2026-11-04T08:57:18Z",
+      "topic": "Least-privilege GITHUB_TOKEN, immutable action pins and avoiding privileged PR triggers; returned primary-source excerpt via Perplexity."
+    },
+    {
+      "url": "https://cli.github.com/manual/gh_release_create",
+      "retrieved_at": "2026-11-04T08:57:22Z",
+      "topic": "--verify-tag prevents implicit tag creation; --prerelease and --latest=false; existing release creation does not clobber."
+    },
+    {
+      "url": "https://github.com/actions/checkout/releases/tag/v7.0.1",
+      "retrieved_at": "2026-11-04T09:01:35Z",
+      "topic": "Official release tag resolved to pinned commit 3d3c42e5aac5ba805825da76410c181273ba90b1. Action manifest inspected for runtime/inputs; not a full action-source security audit."
+    },
+    {
+      "url": "https://github.com/actions/setup-go/releases/tag/v7.0.0",
+      "retrieved_at": "2026-11-04T09:01:35Z",
+      "topic": "Official release tag resolved to pinned commit b7ad1dad31e06c5925ef5d2fc7ad053ef454303e. Action manifest inspected for runtime/inputs; not a full action-source security audit."
+    },
+    {
+      "url": "https://github.com/actions/setup-python/releases/tag/v7.1.0",
+      "retrieved_at": "2026-11-04T09:01:35Z",
+      "topic": "Official release tag resolved to pinned commit 6d4fd22b20465ccc0f7354476588e8df7c9ca0e0. Action manifest inspected for runtime/inputs; not a full action-source security audit."
+    },
+    {
+      "url": "https://github.com/actions/upload-artifact/releases/tag/v7.0.2",
+      "retrieved_at": "2026-11-04T09:01:35Z",
+      "topic": "Official release tag resolved to pinned commit cf430e030ddbb5b0abf93d22962f4752f3646cd9. Action manifest inspected for runtime/inputs; not a full action-source security audit."
+    },
+    {
+      "url": "https://github.com/actions/download-artifact/releases/tag/v8.0.2",
+      "retrieved_at": "2026-11-04T09:01:35Z",
+      "topic": "Official release tag resolved to pinned commit 9000827ccba6bdab643e8b6fd33ac0654aef8333. Action manifest inspected for runtime/inputs; not a full action-source security audit."
     }
   ],
   "module_metadata": {

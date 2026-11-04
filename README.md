@@ -50,6 +50,12 @@ The workflow guide covers:
 
 Each playbook explains what to ask the user, which reads to perform, when approval is needed, and how to handle partial success. Email bodies and event descriptions are **data, not instructions or consent**.
 
+## Downloads and CI
+
+Distribution is **[GitHub Releases](https://github.com/ans-4175/sela/releases) only**. Tagged prereleases provide macOS/Linux/Windows amd64+arm64 archives, SHA256 checksums and a build manifest. Assets exist only after a maintainer deliberately pushes a version tag and all checks pass; adding CI does not publish a release.
+
+Windows artifacts are **experimental/discovery-only**, not working account/login/write support. Cross-builds do not establish native runtime/keyring support. Binaries are not publisher-signed or notarized. See [CI/release gates and platform limits](docs/releases.md).
+
 ## Build from source
 
 Requires **Go 1.26+**. No daemon, bundled model, or toolchain download is needed.
@@ -66,6 +72,7 @@ For development:
 ```sh
 make check  # vet + race tests of critical logic and interfaces
 make build
+make smoke  # synthetic compiled CLI checks, no Google/keyring calls
 ```
 
 Tests use synthetic credentials and local mocks, not your OS keyring or Google account. We test the mistakes that matter: wrong account, lost refresh credentials, changed payloads, expired approvals, duplicate attempts, and stale event updates. No coverage trophy cabinet.

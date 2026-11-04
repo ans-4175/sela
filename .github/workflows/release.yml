@@ -1,0 +1,74 @@
+name: GitHub prerelease
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+    with:
+      version: ${{ github.ref_name }}
+
+  publish:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # No source checkout or repository script execution in the write-permission job.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sela-release-${{ github.run_id }}
+          path: dist
+      - name: Verify exact asset inventory, identity and checksums
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          EXPECTED_COMMIT: ${{ needs.checks.outputs.commit }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re
+          tag, commit = os.environ['RELEASE_TAG'], os.environ['EXPECTED_COMMIT']
+          assert re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?', tag)
+          assert re.fullmatch(r'[a-f0-9]{40}', commit)
+          root = pathlib.Path('dist')
+          archives = {f'sela_{tag}_{system}_{arch}' + ('.zip' if system == 'windows' else '.tar.gz')
+                      for system in ('darwin', 'linux', 'windows') for arch in ('amd64', 'arm64')}
+          expected = archives | {'MANIFEST.json', 'RELEASE_NOTES.md'}
+          assert {p.name for p in root.iterdir()} == expected | {'SHA256SUMS.txt'}
+          assert all(p.is_file() and not p.is_symlink() for p in root.iterdir())
+          checksums = {}
+          for line in (root / 'SHA256SUMS.txt').read_text().splitlines():
+              digest, name = line.split('  ', 1)
+              assert name in expected and name not in checksums
+              assert digest == hashlib.sha256((root / name).read_bytes()).hexdigest()
+              checksums[name] = digest
+          assert set(checksums) == expected
+          manifest = json.loads((root / 'MANIFEST.json').read_text())
+          assert manifest['version'] == tag and manifest['commit'] == commit and manifest['modified'] is False
+          assert len(manifest['artifacts']) == 6
+          assert {a['file'] for a in manifest['artifacts']} == archives
+          assert {(a['os'], a['arch']): a['file'] for a in manifest['artifacts']} == {
+              (system, arch): f'sela_{tag}_{system}_{arch}' + ('.zip' if system == 'windows' else '.tar.gz')
+              for system in ('darwin', 'linux', 'windows') for arch in ('amd64', 'arm64')}
+          for asset in manifest['artifacts']:
+              assert asset['sha256'] == checksums[asset['file']]
+              if asset['os'] == 'windows':
+                  assert asset['scope'] == 'experimental discovery-only; protected state disabled'
+          PY
+      - name: Publish on GitHub Releases only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
+            --title "Sela $RELEASE_TAG (prerelease)" --notes-file dist/RELEASE_NOTES.md
