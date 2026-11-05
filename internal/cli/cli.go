@@ -19,6 +19,12 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		_, e := io.WriteString(a.Out, help)
 		return e
 	}
+	if args[0] == "brief" || len(args) > 1 && (args[0] == "calendar" && args[1] == "availability" || args[0] == "mail" && args[1] == "thread") {
+		return a.readWorkflow(ctx, args)
+	}
+	if args[0] == "doctor" {
+		return a.doctor(ctx, args[1:])
+	}
 	if args[0] == "--skill" {
 		return skill(a.Out, args[1:])
 	}
@@ -35,11 +41,11 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		if len(args) != 2 {
 			return errors.New("auth scopes takes no arguments")
 		}
-		return encode(a.Out, map[string]any{"default": auth.Scopes(), "calendar_write_opt_in": auth.ProfileScopes(true, false), "mail_modify_opt_in": auth.MailModifyScope, "granted": false})
+		return encode(a.Out, map[string]any{"default": auth.Scopes(), "calendar_write_opt_in": auth.ProfileScopes(true, false), "mail_modify_opt_in": auth.MailModifyScope, "calendar_freebusy_opt_in": auth.CalendarFreeBusyScope, "granted": false})
 	}
 	alias, id, query, page, calendarID, start, end, file, action, profile, clientFile := "", "", "", "", "", "", "", "", "", "", ""
 	limit := int64(20)
-	reconsent, mailModify, markRead := false, false, false
+	reconsent, mailModify, markRead, freeBusy := false, false, false, false
 	idsValue := ""
 	approval := plans.ChatApproval{}
 	allowed := map[string]*string{"account": &alias}
@@ -88,6 +94,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	if args[0] == "auth" && args[1] == "login" {
 		booleans["reauth"] = &reconsent
 		booleans["mail-modify"] = &mailModify
+		booleans["calendar-freebusy"] = &freeBusy
 	}
 	if args[0] == "mail" && args[1] == "get" {
 		booleans["mark-read"] = &markRead
@@ -148,7 +155,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	}
 	switch args[0] {
 	case "auth":
-		return a.authCommand(ctx, args[1], account, clientFile, profile, reconsent, mailModify)
+		return a.authCommand(ctx, args[1], account, clientFile, profile, reconsent, mailModify, freeBusy)
 	case "plan":
 		return a.planCommand(ctx, args[1], account, id, approval)
 	case "mail":

@@ -104,6 +104,18 @@ def main():
 
 Commit: `{commit}`
 
+## Read-workflow additions
+
+- `sela doctor`: offline diagnosis; keyring inspection is opt-in and reports metadata only, never refreshes credentials.
+- `sela calendar availability`: selected-calendar free/busy gaps, explicit window/timezone/duration; incomplete calendar coverage fails closed. Requires separate `--calendar-freebusy` login opt-in and human browser consent; old profiles/connections are unchanged.
+- `sela brief`: bounded agenda and email metadata bundle with explicit partial results/pagination; no background schedule or bundled model.
+- `sela mail thread`: metadata plus selected latest message bodies with capped plain-text excerpts and explicit omissions; read-only, no reply/draft/mark-read.
+- Embedded guides: `doctor`, `availability`, `brief`, `thread`, plus updated existing workflows.
+
+These additions have synthetic/offline tests, not user-account live proof. Real natural token expiry/refresh remains unverified. Existing action-approval and single-attempt boundaries are unchanged.
+
+## Assets and support boundaries
+
 Six build targets: macOS/Darwin, Linux, Windows × amd64/arm64. Cross-build is not runtime validation.
 
 **Windows is experimental, discovery-only. Account storage, login and approved writes deliberately fail closed pending private-storage ACL/locking support.**

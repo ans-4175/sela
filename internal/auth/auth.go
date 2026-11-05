@@ -20,6 +20,16 @@ import (
 )
 
 const MailModifyScope = "https://www.googleapis.com/auth/gmail.modify"
+const CalendarFreeBusyScope = "https://www.googleapis.com/auth/calendar.events.freebusy"
+
+// ConnectionScopes preserves legacy profiles; free/busy is an independent explicit opt-in.
+func ConnectionScopes(calendarWrite, mailModify, freeBusy bool) []string {
+	scopes := ProfileScopes(calendarWrite, mailModify)
+	if freeBusy {
+		scopes = append(scopes, CalendarFreeBusyScope)
+	}
+	return scopes
+}
 
 func Scopes() []string { return ProfileScopes(false, false) }
 func ProfileScopes(calendarWrite, mailModify bool) []string {

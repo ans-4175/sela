@@ -39,7 +39,7 @@ func fixture(t *testing.T) (*App, *bytes.Buffer, *forbiddenStore) {
 }
 func TestDiscoveryIsLocalSelfDescribingAndStrict(t *testing.T) {
 	a, out, creds := fixture(t)
-	for _, args := range [][]string{{"--help"}, {"version"}, {"auth", "scopes"}, {"--skill"}, {"--skill", "gmail"}, {"--skill", "calendar"}, {"--skill", "workflows"}, {"--skill", "safety"}} {
+	for _, args := range [][]string{{"--help"}, {"version"}, {"auth", "scopes"}, {"--skill"}, {"--skill", "gmail"}, {"--skill", "calendar"}, {"--skill", "workflows"}, {"--skill", "safety"}, {"--skill", "doctor"}, {"--skill", "availability"}, {"--skill", "brief"}, {"--skill", "thread"}, {"doctor"}} {
 		out.Reset()
 		if e := a.Run(context.Background(), args); e != nil || out.Len() == 0 {
 			t.Fatal(args, e)

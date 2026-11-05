@@ -6,7 +6,7 @@ sela calendar list --account personal --limit 20
 sela calendar events --account personal --calendar CALENDAR_ID --start 2026-12-01T00:00:00+07:00 --end 2026-12-08T00:00:00+07:00 --limit 20
 sela calendar get --account personal --calendar CALENDAR_ID --id EVENT_ID
 ```
-Use a user-selected calendar and RFC3339 dates with offsets (range <=366 days). No implicit primary calendar; an explicit `--calendar primary` is fine if the user chose it. Empty results are not guaranteed availability: calendars may be missing, paging incomplete, events tentative/private or timezone assumptions wrong. No freebusy API/aggregation is exposed yet.
+Use a user-selected calendar and RFC3339 dates with offsets (range <=366 days). No implicit primary calendar; an explicit `--calendar primary` is fine if the user chose it. Empty results are not guaranteed availability: calendars may be missing, paging incomplete, events tentative/private or timezone assumptions wrong. For selected-calendar free/busy aggregation use `calendar availability --account ALIAS --file INPUT.json` and `--skill availability`. It requires the separate explicit --calendar-freebusy scope opt-in; failures/missing calendars never imply free time. Use --skill brief for a compact agenda+mail bundle, not guaranteed availability.
 
 ## Event write boilerplate
 Requires separately consented `gmail-calendar-write` profile. Example private input:

@@ -102,6 +102,11 @@
       "url": "https://github.com/cli/cli/issues/9514",
       "retrieved_at": "2026-11-05T01:09:18Z",
       "topic": "Primary gh issue retrieved via GitHub API: --target on an older commit can return 403 for Actions integration despite contents:write. Sela already verifies an existing immutable tag, so drops the redundant target override without increasing token permissions; real publish rerun remains required to confirm."
+    },
+    {
+      "url": "https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query",
+      "retrieved_at": "2026-11-05T05:02:11Z",
+      "topic": "Official free/busy read query allows calendar.events.freebusy, calendar.freebusy, calendar.readonly or calendar. Existing Sela calendar.events(.readonly) profiles do not include these: new narrow scope is independent opt-in, with separate real browser consent; no silent scope expansion."
     }
   ],
   "module_metadata": {

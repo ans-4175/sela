@@ -18,9 +18,9 @@ func skill(out io.Writer, args []string) error {
 		topic = args[0]
 	}
 	switch topic {
-	case "overview", "gmail", "calendar", "workflows", "safety":
+	case "overview", "gmail", "calendar", "workflows", "safety", "doctor", "availability", "brief", "thread":
 	default:
-		return errors.New("unknown skill topic; choose gmail|calendar|workflows|safety")
+		return errors.New("unknown skill topic; choose gmail|calendar|workflows|safety|doctor|availability|brief|thread")
 	}
 	b, e := skills.ReadFile("skills/" + topic + ".md")
 	if e != nil {

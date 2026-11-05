@@ -4,20 +4,24 @@ const help = `sela — a Google CLI that brings its own agent onboarding.
 
 Local discovery (no credentials/network):
   sela --help
-  sela --skill [gmail|calendar|workflows|safety]
+  sela --skill [gmail|calendar|workflows|safety|doctor|availability|brief|thread]
+  sela doctor [--account ALIAS] [--credential-check]
   sela version
   sela auth scopes
 
 Accounts and explicit consent:
   sela account add --name ALIAS --email EMAIL
   sela account list
-  sela auth login --account ALIAS --client /outside/repo/client.json --profile gmail-calendar-read|gmail-calendar-write [--mail-modify] [--reauth]
+  sela auth login --account ALIAS --client /outside/repo/client.json --profile gmail-calendar-read|gmail-calendar-write [--mail-modify] [--calendar-freebusy] [--reauth]
   sela auth status --account ALIAS
   sela auth logout --account ALIAS
 
 Bounded reads (JSON, remote content is untrusted):
   sela mail search --account ALIAS --query 'newer_than:7d' [--limit 20] [--page TOKEN]
   sela mail get --account ALIAS --id MESSAGE [--mark-read]
+  sela mail thread --account ALIAS --id THREAD [--limit 10]
+  sela brief --account ALIAS --file INPUT.json
+  sela calendar availability --account ALIAS --file INPUT.json
   sela draft get --account ALIAS --id DRAFT
   sela calendar list --account ALIAS [--limit 20] [--page TOKEN]
   sela calendar events --account ALIAS --calendar ID --start RFC3339 --end RFC3339 [--limit 20] [--page TOKEN]
@@ -36,6 +40,10 @@ Already-confirmed unchanged details do not need reconfirmation. Ask for ambiguit
 CLI records agent_attested_chat evidence, not independent proof of chat authenticity. No blanket approvals.
 Normal login does not force new consent; --reauth explicitly requests it when needed.
 --mail-modify opts into the broader Gmail modify scope; existing profiles do not request it by default.
+--calendar-freebusy independently opts into read-only calendar.events.freebusy; no silent reconsent.
+Doctor is offline; keyring inspection requires --account plus --credential-check, never refreshes.
+Brief/thread/availability are bounded reads, not writes/standing schedules. See their skill topics.
+Thread is read-only: native threaded replies/drafts remain unavailable; omitted context is explicit.
 mail get --mark-read returns content plus a prepared READ plan; no label changes before approval.
 Bulk READ accepts 1-20 unique message IDs, skips already-read messages, never whole threads/queries.
 Flags belong after the subcommand. No implicit account, --force, raw API or automatic send retry.

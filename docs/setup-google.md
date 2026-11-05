@@ -65,6 +65,10 @@ To use mark-read, additionally declare `https://www.googleapis.com/auth/gmail.mo
 
 Google's modify scope is broader than marking READ. Sela exposes only fixed removal of UNREAD on explicitly selected message IDs, not arbitrary labels, archive or deletion. OAuth consent is not per-action approval: actual label changes still need an exact user-approved plan recorded by the agent from chat consent. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
 
+### Optional: selected-calendar free/busy reads
+
+Availability uses the separate `https://www.googleapis.com/auth/calendar.events.freebusy` scope. Declare it only if wanted, then deliberately repeat your selected login profile with `--calendar-freebusy --reauth`, preserving any other opt-ins you still want. This requires fresh human-controlled browser consent; existing profiles/connections are not widened automatically. It enables the bounded read-only availability command, not meeting creation or standing scheduling authority. Brief and thread reads do not require this new scope. See `sela --skill availability`.
+
 You can inspect the exact profiles without accessing an account:
 
 ```sh
@@ -136,6 +140,10 @@ sela auth logout --account personal
 ```
 
 Logout is a credential mutation; run it only when you mean to disconnect that local account. It does not claim to revoke all Google's previously issued tokens. Use your Google Account's third-party access controls for provider-side revocation.
+
+## Local diagnosis before changing authentication
+
+`sela doctor` is credential-free discovery. `sela doctor --account ALIAS` checks existing local setup without Google or keyring access. Only the optional `--credential-check` opens the local keyring and reports presence/expiry; it never prints token values or refreshes/saves/deletes them. Read the diagnostic status, not just the exit code. Local validity/presence is not evidence of a current provider grant; real natural expiry/refresh remains unverified. See `sela --skill doctor`.
 
 ## If login refuses
 

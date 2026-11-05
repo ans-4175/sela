@@ -34,7 +34,7 @@ def main():
             return result.stdout
 
         assert "--user-approval" in run("--help")
-        for topic in [None, "gmail", "calendar", "workflows", "safety"]:
+        for topic in [None, "gmail", "calendar", "workflows", "safety", "doctor", "availability", "brief", "thread"]:
             assert len(run("--skill", *([topic] if topic else []))) > 100
         metadata = json.loads(run("version"))
         assert metadata["version"] and metadata["commit"] and metadata["platform"]
@@ -42,7 +42,14 @@ def main():
             assert metadata["version"] == args.expected_version
         scopes = json.loads(run("auth", "scopes"))
         assert scopes["granted"] is False and len(scopes["default"]) == 6
-        assert not (root / "config").exists(), "discovery wrote state"
+        diagnostic = json.loads(run("doctor"))
+        assert diagnostic["credential_checked"] is False and diagnostic["network_used"] is False
+        assert diagnostic["refresh_attempted"] is False
+        run("mail", "thread", "--account", "missing", "--id", "../invalid", error="thread ID")
+        run("mail", "thread", "--account", "missing", "--id", "thread1", "--limit", "21", error="limit 1-20")
+        run("brief", "--account", "missing", "--file", str(root / "absent.json"), error="cannot open")
+        run("calendar", "availability", "--account", "missing", "--file", str(root / "absent.json"), error="cannot open")
+        assert not (root / "config").exists(), "discovery/invalid reads wrote state"
         run("mail", "search", "--account", "missing", error="explicit query")
         run("plan", "approve", "--account", "missing", "--id", "a" * 32, error="--user-approval")
         if os.name == "nt":

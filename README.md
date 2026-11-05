@@ -28,6 +28,8 @@ The CLI and Google adapters have offline critical-path tests. **Native macOS OAu
 
 “Portable PA” means the toolkit travels between agents and harnesses. It does not mean every OS or model has already passed integration testing.
 
+Read-workflow additions (offline/synthetic validation only): `doctor`, selected-calendar free/busy availability, compact read-only daily brief, and bounded email thread context. Native threaded reply/draft writes remain out of scope. Availability requires a separately consented, opt-in free/busy scope; existing connections are unchanged. These additions are not retroactively included in the published beta.1 tag.
+
 ## The manual is a command
 
 ```sh
@@ -36,6 +38,10 @@ sela --skill
 sela --skill gmail
 sela --skill calendar
 sela --skill workflows
+sela --skill doctor
+sela --skill availability
+sela --skill brief
+sela --skill thread
 sela --skill safety
 ```
 
@@ -127,6 +133,19 @@ The preview accepts 1–20 unique message IDs, reads metadata, and skips message
 
 Calendar create can opt into a new Google Meet with top-level `"conference":{"type":"google_meet"}`. The preview binds a unique request ID and notification effects. Meet generation is asynchronous: an event/invitations may exist before the link is ready. A successful event-create plan is not proof of a ready meeting—check `result.meet_ready` and `workflow_complete`. Reconcile pending/failure on the existing event; never blindly recreate it. See `sela --skill calendar`.
 
+## Convenient bounded read workflows
+
+```sh
+sela doctor
+sela doctor --account personal  # offline configuration check; no keyring by default
+sela doctor --account personal --credential-check  # explicit local keyring inspection, never refreshes
+sela calendar availability --account personal --file /private/path/availability.json
+sela brief --account personal --file /private/path/brief.json
+sela mail thread --account personal --id THREAD_ID --limit 10
+```
+
+Read each matching embedded skill for the JSON schema and coverage rules. Availability uses an explicit calendar list, <=14-day window, matching timezone and duration; login must separately opt into `--calendar-freebusy` (`calendar.events.freebusy`) through human-controlled consent. Missing/error calendars never imply free time. The brief takes selected calendars and an explicit mail query, <=48-hour agenda window and 1–20 per-source limits; partial results/pagination stay visible. Thread reads metadata, then only selected latest message bodies, returning capped plain-text excerpts; no native threaded reply, attachment endpoint or label mutation. These commands do not schedule anything or bundle a model.
+
 ## Sending is not a side quest
 
 A send, draft creation, or event change uses the same path:
@@ -153,7 +172,7 @@ Plans expire **15 minutes after creation**, not after approval. Mail attachments
 
 Once claimed, an attempt cannot be replayed. Transport errors and interrupted writes remain **unknown/executing** until reconciled; Sela will not blindly send again. This is local at-most-one-attempt behavior, not distributed exactly-once delivery. Cross-product workflows can partially succeed and have no automatic rollback.
 
-Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, arbitrary mailbox labels/archive/delete, recurring or all-day event writes, Calendar/ACL administration, free/busy aggregation, or background scheduling.
+Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, arbitrary mailbox labels/archive/delete, recurring or all-day event writes, Calendar/ACL administration, native threaded reply writes, or background scheduling.
 
 ## Extend the capability, bring the instructions
 

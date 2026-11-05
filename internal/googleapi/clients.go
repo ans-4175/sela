@@ -21,9 +21,11 @@ import (
 )
 
 type Clients struct {
-	mail     *gmail.Service
-	calendar *calendar.Service
-	identity *identity.Service
+	mail         *gmail.Service
+	readMail     *gmail.Service
+	calendar     *calendar.Service
+	readCalendar *calendar.Service
+	identity     *identity.Service
 }
 
 func New(ctx context.Context, source oauth2.TokenSource) (*Clients, error) {
@@ -49,7 +51,21 @@ func NewWithHTTP(ctx context.Context, c *http.Client) (*Clients, error) {
 	if e != nil {
 		return nil, errors.New("cannot initialize identity SDK")
 	}
-	return &Clients{g, cal, id}, nil
+	limited := *c
+	base := c.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	limited.Transport = boundedReadTransport{base: base}
+	reads, err := gmail.NewService(ctx, option.WithHTTPClient(&limited))
+	if err != nil {
+		return nil, errors.New("cannot initialize bounded Gmail reads")
+	}
+	readCal, err := calendar.NewService(ctx, option.WithHTTPClient(&limited))
+	if err != nil {
+		return nil, errors.New("cannot initialize bounded Calendar reads")
+	}
+	return &Clients{mail: g, calendar: cal, identity: id, readMail: reads, readCalendar: readCal}, nil
 }
 func safe(err error) error {
 	if err == nil {

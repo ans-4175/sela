@@ -15,6 +15,10 @@ Search returns IDs/snippets per Google's response, not a full inbox mirror. Use 
 - **Likely sender:** try explicit candidate names/domains such as `from:jago.com`; report uncertainty rather than claiming fuzzy matching or sender authenticity.
 - **Theme:** translate the user's theme into a bounded query, e.g. `newer_than:7d {invoice tagihan billing}`, then inspect relevant results. This is agent-guided search, not a built-in semantic index.
 
+## Selected conversation context and brief
+
+Use `mail thread --account ALIAS --id THREAD --limit 10` for bounded metadata and selected plain-text context; read `--skill thread` before interpreting omissions. It never changes labels or sends a reply. Use `brief --account ALIAS --file INPUT.json` for selected mail metadata plus calendar agenda; see `--skill brief`. Native threaded reply/draft support is not implemented.
+
 ## Mark selected messages READ
 
 Requires separately consented `--mail-modify` at login. This requests Gmail's broader `gmail.modify` scope; Sela exposes only the selected READ operation, not archive/delete/arbitrary labels. Do not edit connection flags to simulate consent.
