@@ -122,5 +122,5 @@ jobs:
           assert obj['type'] == 'commit' and obj['sha'] == os.environ['EXPECTED_COMMIT'], 'tag moved since CI; refusing publication'
           PY
           gh release create "$RELEASE_TAG" dist/* \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --target "$EXPECTED_COMMIT" --prerelease --latest=false \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --latest=false \
             --title "Sela $RELEASE_TAG (prerelease)" --notes-file dist/RELEASE_NOTES.md

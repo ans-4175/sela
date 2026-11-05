@@ -44,6 +44,14 @@ class ReleaseSourceBinding(unittest.TestCase):
                     exec(inline_script("Resolve immutable existing tag"), {})
                 gh.assert_not_called()
 
+    def test_existing_tag_publication_never_sends_target_override(self):
+        section = WORKFLOW.read_text().split("name: Publish on GitHub Releases only", 1)[1]
+        command = section.split('gh release create "$RELEASE_TAG"', 1)[1]
+        self.assertIn('--verify-tag', command)
+        self.assertNotIn('--target', command)
+        self.assertIn('--prerelease --latest=false', command)
+        self.assertIn("obj['sha'] == os.environ['EXPECTED_COMMIT']", section)
+
     def test_publication_rechecks_tag_commit(self):
         code = inline_script("Publish on GitHub Releases only")
         for actual, passes in [("a" * 40, True), ("b" * 40, False)]:

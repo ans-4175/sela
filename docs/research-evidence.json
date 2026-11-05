@@ -97,6 +97,11 @@
       "url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
       "retrieved_at": "2026-11-04T23:56:12Z",
       "topic": "Official standard public macOS Intel label macos-15-intel verified via Perplexity primary-source excerpt. macos-latest selects arm64; switching test host preserves race/tests and six cross-build targets, not native ARM CI coverage."
+    },
+    {
+      "url": "https://github.com/cli/cli/issues/9514",
+      "retrieved_at": "2026-11-05T01:09:18Z",
+      "topic": "Primary gh issue retrieved via GitHub API: --target on an older commit can return 403 for Actions integration despite contents:write. Sela already verifies an existing immutable tag, so drops the redundant target override without increasing token permissions; real publish rerun remains required to confirm."
     }
   ],
   "module_metadata": {
