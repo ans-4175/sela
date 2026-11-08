@@ -94,10 +94,13 @@ func ValidateSearch(q string, limit int64) error {
 	return nil
 }
 func (c *Clients) Search(ctx context.Context, q string, limit int64, page string) (any, error) {
+	return c.SearchWithSpam(ctx, q, limit, page, false)
+}
+func (c *Clients) SearchWithSpam(ctx context.Context, q string, limit int64, page string, includeSpam bool) (any, error) {
 	if err := ValidateSearch(q, limit); err != nil {
 		return nil, err
 	}
-	r, e := c.mail.Users.Messages.List("me").Q(q).MaxResults(limit).PageToken(page).Context(ctx).Do()
+	r, e := c.readMail.Users.Messages.List("me").Q(q).MaxResults(limit).PageToken(page).IncludeSpamTrash(includeSpam).Context(ctx).Do()
 	return r, safe(e)
 }
 func (c *Clients) Message(ctx context.Context, id string) (*gmail.Message, error) {
@@ -166,6 +169,13 @@ func EventView(e *calendar.Event) *actions.Event {
 
 // Perform sends the immutable snapshot once. It contains NO automatic retry loop.
 func (c *Clients) Perform(ctx context.Context, p plans.Plan) (json.RawMessage, error) {
+	if p.Scope.Action == "mail.trash" {
+		var payload actions.Trash
+		if json.Unmarshal(p.Scope.Payload, &payload) != nil {
+			return nil, errors.New("invalid trash snapshot")
+		}
+		return c.trash(ctx, payload)
+	}
 	if p.Scope.Action == "mail.mark-read" {
 		var payload actions.MarkRead
 		if json.Unmarshal(p.Scope.Payload, &payload) != nil {

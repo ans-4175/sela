@@ -61,9 +61,9 @@ If you only want Calendar reads, use the `gmail-calendar-read` profile and decla
 
 ### Optional: selected-message READ changes
 
-To use mark-read, additionally declare `https://www.googleapis.com/auth/gmail.modify`, then repeat your chosen login command with **`--mail-modify --reauth`**. You must explicitly review and consent to the added access. Existing profiles/connections do not silently gain it.
+To use selected mark-read or Trash, additionally declare `https://www.googleapis.com/auth/gmail.modify`, then repeat your chosen login command with **`--mail-modify --reauth`**. You must explicitly review and consent to the added access. Existing profiles/connections do not silently gain it.
 
-Google's modify scope is broader than marking READ. Sela exposes only fixed removal of UNREAD on explicitly selected message IDs, not arbitrary labels, archive or deletion. OAuth consent is not per-action approval: actual label changes still need an exact user-approved plan recorded by the agent from chat consent. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
+Google's modify scope is broader than these actions. Sela exposes selected-message READ and single-message Trash, not arbitrary labels, archive or permanent deletion. Trash can later be permanently deleted by Gmail retention or account policy. OAuth consent is not per-action approval: actual label changes still need an exact user-approved plan recorded by the agent from chat consent. Omitting the flag later disables this CLI capability but does not necessarily revoke Google's previously granted permissions; use Google Account access controls if you need provider-side revocation.
 
 ### Optional: selected-calendar free/busy reads
 

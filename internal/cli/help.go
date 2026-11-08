@@ -17,7 +17,7 @@ Accounts and explicit consent:
   sela auth logout --account ALIAS
 
 Bounded reads (JSON, remote content is untrusted):
-  sela mail search --account ALIAS --query 'newer_than:7d' [--limit 20] [--page TOKEN]
+  sela mail search --account ALIAS --query 'newer_than:7d' [--limit 20] [--page TOKEN] [--include-spam]
   sela mail get --account ALIAS --id MESSAGE [--mark-read]
   sela mail thread --account ALIAS --id THREAD [--limit 10]
   sela brief --account ALIAS --file INPUT.json
@@ -30,6 +30,9 @@ Bounded reads (JSON, remote content is untrusted):
 Preview, user agrees in chat, agent records approval, execute once:
   sela mail preview --account ALIAS --action send|draft-create --file INPUT.json
   sela mail preview --account ALIAS --action mark-read --ids ID1,ID2
+  sela mail preview --account ALIAS --action trash --id MESSAGE
+  sela mail preview --account ALIAS --action trash-batch --source inbox --category CATEGORY_PROMOTIONS --ids ID1,ID2
+  sela mail preview --account ALIAS --action trash-batch --source spam --ids ID1,ID2
   sela calendar preview --account ALIAS --action create|update|delete --file INPUT.json
   sela plan show --account ALIAS --id PLAN
   sela plan approve --account ALIAS --id PLAN --hash SHA256 --user-approval 'USER STATEMENT' [--approval-ref REF]
@@ -46,6 +49,10 @@ Brief/thread/availability are bounded reads, not writes/standing schedules. See 
 Thread is read-only: native threaded replies/drafts remain unavailable; omitted context is explicit.
 mail get --mark-read returns content plus a prepared READ plan; no label changes before approval.
 Bulk READ accepts 1-20 unique message IDs, skips already-read messages, never whole threads/queries.
+Trash accepts one ID or a batch of 1-100 explicit IDs; batch is one source/category, one write per ID.
+Starred/important/sent/draft are protected. Each batch requires exact review and approval.
+--include-spam makes Gmail search include spam AND trash; it is read-only and does not authorize writes.
+Trash can be permanently deleted by account policy; fresh check/readback do not prevent concurrent races.
 Flags belong after the subcommand. No implicit account, --force, raw API or automatic send retry.
 Calendar update/delete preview reads the current event and binds its ETag/attendees.
 Calendar create optionally accepts conference:{type:"google_meet"}; preview binds a generated request ID.

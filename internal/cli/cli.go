@@ -46,7 +46,8 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	alias, id, query, page, calendarID, start, end, file, action, profile, clientFile := "", "", "", "", "", "", "", "", "", "", ""
 	limit := int64(20)
 	reconsent, mailModify, markRead, freeBusy := false, false, false, false
-	idsValue := ""
+	idsValue, source, category := "", "", ""
+	includeSpam := false
 	approval := plans.ChatApproval{}
 	allowed := map[string]*string{"account": &alias}
 	switch args[0] + " " + args[1] {
@@ -63,6 +64,9 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		allowed["file"] = &file
 		allowed["action"] = &action
 		allowed["ids"] = &idsValue
+		allowed["id"] = &id
+		allowed["source"] = &source
+		allowed["category"] = &category
 	case "calendar preview":
 		allowed["file"] = &file
 		allowed["action"] = &action
@@ -96,6 +100,9 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		booleans["mail-modify"] = &mailModify
 		booleans["calendar-freebusy"] = &freeBusy
 	}
+	if args[0] == "mail" && args[1] == "search" {
+		booleans["include-spam"] = &includeSpam
+	}
 	if args[0] == "mail" && args[1] == "get" {
 		booleans["mark-read"] = &markRead
 	}
@@ -107,9 +114,29 @@ func (a *App) Run(ctx context.Context, args []string) error {
 			return err
 		}
 	}
-	var markIDs []string
+	var markIDs, batchIDs []string
 	if args[0] == "mail" && args[1] == "preview" {
-		if action == "mark-read" {
+		if action != "trash-batch" && (source != "" || category != "") {
+			return errors.New("--source and --category are only valid for trash-batch")
+		}
+		if action == "trash-batch" {
+			if file != "" || id != "" {
+				return errors.New("trash-batch requires --ids only, not --id or --file")
+			}
+			var err error
+			if err = actions.ValidateTrashSource(source, category); err != nil {
+				return err
+			}
+			if batchIDs, err = actions.ParseTrashBatchIDs(idsValue); err != nil {
+				return err
+			}
+		} else if action == "trash" {
+			if file != "" || idsValue != "" || actions.ValidateMessageIDs([]string{id}) != nil {
+				return errors.New("trash requires exactly one --id, not --ids, --file, query or thread")
+			}
+		} else if id != "" {
+			return errors.New("--id is only valid for trash preview")
+		} else if action == "mark-read" {
 			if file != "" {
 				return errors.New("mark-read takes --ids only, not --file")
 			}
@@ -166,8 +193,14 @@ func (a *App) Run(ctx context.Context, args []string) error {
 			if action == "mark-read" {
 				return a.markReadPreview(ctx, account, markIDs)
 			}
+			if action == "trash" {
+				return a.trashPreview(ctx, account, id)
+			}
+			if action == "trash-batch" {
+				return a.trashBatchPreview(ctx, account, batchIDs, source, category)
+			}
 			if action != "send" && action != "draft-create" {
-				return errors.New("mail preview --action send|draft-create|mark-read required; draft update/send-by-ID unavailable")
+				return errors.New("mail preview --action send|draft-create|mark-read|trash required; draft update/send-by-ID unavailable")
 			}
 			var in actions.MailInput
 			if e = readInput(file, &in); e != nil {
@@ -203,7 +236,7 @@ func (a *App) Run(ctx context.Context, args []string) error {
 	var response any
 	switch args[0] + " " + args[1] {
 	case "mail search":
-		response, e = client.Search(ctx, query, limit, page)
+		response, e = client.SearchWithSpam(ctx, query, limit, page, includeSpam)
 	case "mail get":
 		response, e = client.Message(ctx, id)
 	case "draft get":

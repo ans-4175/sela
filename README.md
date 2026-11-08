@@ -107,7 +107,7 @@ Both profiles request Gmail reading and `gmail.compose` (**which includes sendin
 
 If Google omits an offline refresh token, repeat the chosen login command with **`--reauth`** to request fresh consent. Normal login does not force re-consent. Testing-mode Google projects can have short-lived refresh credentials for these scopes; an eligible Production configuration is separate from verification and never guarantees perpetual tokens.
 
-Selected-message mark-read is a separate opt-in: add `--mail-modify --reauth` to your deliberately chosen login command and consent to Gmail's broader `gmail.modify` scope. Existing profiles do not request it by default. The CLI does not expose archive/delete/arbitrary label changes. See the setup guide before granting it.
+Selected-message mark-read and Trash require the separately consented `--mail-modify` opt-in. If absent, add `--mail-modify --reauth` to your chosen login and consent to Gmail's broader `gmail.modify` scope; existing connections are not silently widened. This consent is not permission to change messages. No permanent delete, archive or arbitrary label changes are exposed.
 
 Tokens stay in the native OS keyring, with **no plaintext fallback**. Private client configuration, account metadata, and approval plans live under `$XDG_CONFIG_HOME/sela` or `~/.config/sela` on the current Unix implementation. Refresh is on demand and serialized per account across processes. `auth status` checks local credential presence; `auth logout` removes the local credential, not a claimed remote revocation.
 
@@ -172,7 +172,15 @@ Plans expire **15 minutes after creation**, not after approval. Mail attachments
 
 Once claimed, an attempt cannot be replayed. Transport errors and interrupted writes remain **unknown/executing** until reconciled; Sela will not blindly send again. This is local at-most-one-attempt behavior, not distributed exactly-once delivery. Cross-product workflows can partially succeed and have no automatic rollback.
 
-Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, arbitrary mailbox labels/archive/delete, recurring or all-day event writes, Calendar/ACL administration, native threaded reply writes, or background scheduling.
+### Trash one selected Inbox message
+
+`mail preview --account ALIAS --action trash --id MESSAGE_ID` prepares a single-message plan; it does not change Gmail. Review the exact account and message metadata, then approve the exact plan in chat and execute once. `--mail-modify` scope consent is separate. STARRED, IMPORTANT, SENT, DRAFT, SPAM and already-trashed messages are protected; all reviewed labels and metadata are rechecked before the write. A successful result requires Trash read-back. Gmail Trash can later be permanently deleted by retention or account policy.
+
+For multiple messages, `mail preview --account ALIAS --action trash-batch --source inbox --category CATEGORY_PROMOTIONS --ids ID1,ID2` prepares a batch of 1–100 exact message IDs; use `--source spam` without category for Spam. Each batch requires review and separate approval, then performs one message write at a time and persists per-message progress. STARRED, IMPORTANT, SENT, DRAFT and TRASH remain protected; Inbox batches must match the chosen category. Search requires explicit pagination; `--include-spam` also includes Trash in search results, not write eligibility. Category labels are provider data: in particular Purchases UI membership is not guaranteed to be exposed as CATEGORY_PURCHASES, so missing labels are skipped.
+
+There is no atomic conditional Gmail Trash operation here: a concurrent change can race the precheck. Failures/unknowns consume the plan and require reconciliation, never automatic retry. Search/category results do not authorize an action or automatically expand targets. New single-message and bulk Trash paths have offline tests but no live integration proof. See `sela --skill gmail`.
+
+Not exposed yet: Gmail draft update/send-by-ID, attachment downloads, arbitrary mailbox labels/archive/permanent delete, recurring or all-day event writes, Calendar/ACL administration, native threaded reply writes, or background scheduling.
 
 ## Extend the capability, bring the instructions
 

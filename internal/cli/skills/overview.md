@@ -16,7 +16,7 @@ Use the model for reasoning and the harness for execution. Sela supplies tools a
 ## Capabilities and status
 - Local doctor with optional redacted credential inspection; bounded free/busy availability with separate scope opt-in; compact daily brief; selected thread context with plain-text excerpts. See individual guides for limits/completeness. These new paths have offline/synthetic tests, not user-account live proof. Threaded reply writes remain unavailable.
 - Local metadata, scope discovery, immutable 15-minute plans, agent-attested user chat approval and one-attempt ledger.
-- Official Gmail SDK: bounded search/get, draft get/create, exact-snapshot direct send; opt-in selected-message mark-read with verification. Normal reads never mark READ; `mail get --mark-read` prepares a write plan alongside content.
+- Official Gmail SDK: bounded search/get, draft get/create, exact-snapshot direct send; opt-in selected-message mark-read and single-message Trash with verification. Normal reads never mark READ; `mail get --mark-read` prepares a write plan alongside content.
 - Official Calendar SDK: calendar/event reads; timed single-event create/update/delete with explicit calendar, timezone, attendee/notification effects, ETag checks for changes. Create optionally requests a new Google Meet; readiness can remain pending/failed after event creation.
 - OAuth Desktop + PKCE loopback, on-demand refresh, native OS keyring without plaintext fallback. Login requires user-selected account and explicit scope profile. `gmail.compose` can send, not just draft.
 - No daemon, mailbox mirror, default account, force flag, raw API, automatic send retry, cross-account aggregation, Calendar/ACL admin or hidden browser automation.
