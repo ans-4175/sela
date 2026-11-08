@@ -58,8 +58,12 @@ func (a *App) planCommand(ctx context.Context, cmd string, account accounts.Acco
 		return errors.New("calendar write profile was not explicitly consented; nothing attempted")
 	}
 	if p.Scope.Action == "mail.trash-batch" {
-		result, err := store.ExecuteTrashBatch(ctx, id, account, func(batch actions.TrashBatch, index int) error {
-			_, err := client.TrashBatchItem(ctx, batch, index)
+		// Expiry bounds in-flight reads/writes as well as the start of each item.
+		// A deadline during a provider call leaves that claimed item unknown.
+		batchCtx, cancel := context.WithDeadline(ctx, p.Scope.Expires)
+		defer cancel()
+		result, err := store.ExecuteTrashBatch(batchCtx, id, account, func(batch actions.TrashBatch, index int) error {
+			_, err := client.TrashBatchItem(batchCtx, batch, index)
 			return err
 		})
 		if err != nil {

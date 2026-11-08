@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const MaxTrashBatch = 100
+const MaxTrashBatch = 500
 
 var batchID = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 
@@ -18,7 +18,7 @@ type TrashBatch struct {
 
 func ValidateTrashBatchIDs(ids []string) error {
 	if len(ids) < 1 || len(ids) > MaxTrashBatch {
-		return errors.New("select 1-100 explicit message IDs")
+		return errors.New("select 1-500 explicit message IDs")
 	}
 	seen := map[string]bool{}
 	for _, id := range ids {

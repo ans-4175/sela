@@ -2,10 +2,16 @@ package cli
 
 import (
 	"context"
+	"errors"
+	"time"
+
 	"github.com/ans-4175/sela/internal/accounts"
 )
 
 func (a *App) trashBatchPreview(ctx context.Context, account accounts.Account, ids []string, source, category string) error {
+	// Bound the entire preview, not just each provider request.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
 	client, _, err := a.client(ctx, account)
 	if err != nil {
 		return err
@@ -13,6 +19,9 @@ func (a *App) trashBatchPreview(ctx context.Context, account accounts.Account, i
 	batch, skipped, err := client.TrashBatchPreview(ctx, ids, source, category)
 	if err != nil {
 		return err
+	}
+	if ctx.Err() != nil {
+		return errors.New("batch preview cancelled or timed out; no plan prepared")
 	}
 	var plan any
 	if len(batch.Messages) > 0 {

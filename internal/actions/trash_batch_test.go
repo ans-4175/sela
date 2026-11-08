@@ -6,7 +6,7 @@ import (
 )
 
 func TestTrashBatchBoundsAndSource(t *testing.T) {
-	ids := make([]string, 100)
+	ids := make([]string, 500)
 	for i := range ids {
 		ids[i] = fmt.Sprintf("id%d", i)
 	}
